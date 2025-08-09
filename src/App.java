@@ -92,7 +92,31 @@ class Room {
 }
 
 class Guest {
+    String guestname;
+    int id;
 
+    private int finduniqueID(Guest[] guestlist) {
+        boolean found = true;
+        int id = 0;
+        int i = 0;
+        while (i < guestlist.length) {
+            if (id == guestlist[i].id) {
+                found = false;
+                id++;
+            }
+            i++;
+            if (i == guestlist.length && !found) {
+                found = true;
+                i = 0;
+            }
+        }
+        return id;
+    }
+
+    Guest(String guestname, Guest[] guestlist) {
+        this.guestname = guestname;
+        this.id = finduniqueID(guestlist);
+    }
 }
 
 class Booking {
