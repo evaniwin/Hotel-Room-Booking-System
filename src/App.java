@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 enum ROOM_TYPE {
     SINGLE,
     DOUBLE,
@@ -94,7 +95,9 @@ class Room {
 class Guest {
     String guestname;
     int id;
-
+    String phonenumber;
+    String email;
+    ArrayList<Booking> booking;
     private int finduniqueID(Guest[] guestlist) {
         boolean found = true;
         int id = 0;
@@ -116,6 +119,7 @@ class Guest {
     Guest(String guestname, Guest[] guestlist) {
         this.guestname = guestname;
         this.id = finduniqueID(guestlist);
+        booking = new ArrayList<Booking>(10);
     }
 }
 
