@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.sql.Date;
 enum ROOM_TYPE {
     SINGLE,
     DOUBLE,
@@ -124,6 +125,18 @@ class Guest {
 }
 
 class Booking {
+    int bookingid;
+    Guest guest;
+    Room room;
+    Date checkin;
+    Date Checkout;
+    //The checking date and checkout date can be converted to long using the Date.valueof("yyyy-mm-dd")
+    Booking(Guest guest,Room room,long checkindate,long checkoutdate){
+        this.guest = guest;
+        this.room = room;
+        this.checkin = new Date(checkindate);
+        this.Checkout = new Date(checkoutdate);
+    }
 
 }
 
