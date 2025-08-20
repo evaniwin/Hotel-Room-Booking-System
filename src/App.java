@@ -1,10 +1,24 @@
+import java.io.Console;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 enum ROOM_TYPE {
-    SINGLE, DOUBLE, DELUXE
+    SINGLE, DOUBLE, DELUXE;
+
+    public static ROOM_TYPE enumfromint(int val) {
+        switch (val) {
+            case 1:
+                return ROOM_TYPE.SINGLE;
+            case 2:
+                return ROOM_TYPE.DOUBLE;
+            case 3:
+                return ROOM_TYPE.DELUXE;
+            default:
+                throw new IllegalArgumentException("Given Value must be between 1 and 3");
+        }
+    }
 }
 
 class Room {
@@ -313,11 +327,199 @@ class HotelManager {
 public class App {
     public static void main(String[] args) {
         HotelManager manager = new HotelManager();
-        test(manager);
-
+        Scanner sc = new Scanner(System.in);
+        while (true) {
+            clear();
+            System.out.println("This is the Hotel administration Menu");
+            System.out.println("    1) Room Management");
+            System.out.println("    2) Guest Management");
+            System.out.println("    3) Booking Management");
+            System.out.println("    4) Run Tests");
+            System.out.println("    5) Exit Program");
+            System.out.println("Enter (1/2/3/4/5)?");
+            System.out.print('>');
+            int op = sc.nextInt();
+            clear();
+            switch (op) {
+                // room
+                case 1:
+                    manageroom(manager, sc);
+                    break;
+                // guest
+                case 2:
+                    manageguest(manager, sc);
+                    break;
+                // booking
+                case 3:
+                    managebooking(manager, sc);
+                    break;
+                // Test
+                case 4:
+                    test();
+                    break;
+                // Exit
+                case 5:
+                    sc.close();
+                    return;
+                default:
+                    System.out.println("Invalid Option Selected");
+                    System.out.println("Press Enter to continue");
+                    sc.next();
+                    break;
+            }
+        }
     }
 
-    static void test(HotelManager manager) {
+    static void manageroom(HotelManager manager, Scanner sc) {
+        while (true) {
+            clear();
+            System.out.println("This is the Hotel Room management Menu");
+            System.out.println("    1) Create Room");
+            System.out.println("    2) View Created Rooms");
+            System.out.println("    3) ");
+            System.out.println("    4) ");
+            System.out.println("    5) ");
+            System.out.println("Enter (1/2/3/4/5)?");
+            System.out.print('>');
+            int op = sc.nextInt();
+            switch (op) {
+               
+                case 1:
+                    try {
+                        clear();
+                        System.out.println("Enter Room Price Per night");
+                        System.out.print('>');
+                        int pricepernight = sc.nextInt();
+                        clear();
+                        System.out.println("Enter Room Type");
+                        System.out.println("Available Options");
+                        System.out.println("    1) Single room");
+                        System.out.println("    2) Double room");
+                        System.out.println("    3) Deluxe room");
+                        System.out.println("Enter (1/2/3)?");
+                        System.out.print('>');
+                        ROOM_TYPE type = ROOM_TYPE.enumfromint(sc.nextInt());
+                        clear();
+                        System.out.println("Enter Room Number To assign to room");
+                        System.out.print('>');
+                        int roomnum = sc.nextInt();
+                        manager.addRoom(new Room(roomnum, type, pricepernight));
+                    } catch (IllegalArgumentException e) {
+                        System.out.println(e);
+                        return;
+                    }
+
+                    break;
+               
+                case 2:
+                    clear();
+                    System.out.println("Created Rooms:");
+                    for (Room b : manager.allRooms()) {
+                        System.out.println("");
+                        System.out.println("    " + b);
+                        System.out.println("        | Room Number: " + b.getRoomNumber());
+                        System.out.println("        | Room Type: " + b.getType());
+                        System.out.println("        | Price Per Night: " + b.getPricePerNight());
+                        System.out.println("");
+                    }
+
+                    System.out.println("Press Enter to continue");
+                    sc.next();
+                    break;
+               
+                case 3:
+                    managebooking(manager, sc);
+
+                    break;
+  
+                case 4:
+                    
+                    break;
+
+                case 5:
+                    
+                    return;
+                default:
+                    System.out.println("Invalid Option Selected");
+                    System.out.println("Press Enter to continue");
+                    sc.next();
+                    break;
+            }
+        }
+    }
+
+    static void manageguest(HotelManager manager, Scanner sc) {
+        while (true) {
+            clear();
+            System.out.println("This is the Hotel Guest management Menu");
+            System.out.println("    1) ");
+            System.out.println("    2) ");
+            System.out.println("    3) ");
+            System.out.println("    4) ");
+            System.out.println("    5) Exit Menu");
+            System.out.print('>');
+            int op = sc.nextInt();
+            switch (op) {
+                case 1:
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    test();
+                    break;
+                case 5:
+                    return;
+                default:
+                    System.out.println("Invalid Option Selected");
+                    System.out.println("Press Enter to continue");
+                    sc.next();
+                    break;
+            }
+        }
+    }
+
+    static void managebooking(HotelManager manager, Scanner sc) {
+        while (true) {
+            clear();
+            System.out.println("This is the Hotel Booking management Menu");
+            System.out.println("    1) ");
+            System.out.println("    2) ");
+            System.out.println("    3) ");
+            System.out.println("    4) ");
+            System.out.println("    5) ");
+            System.out.print('>');
+            int op = sc.nextInt();
+            switch (op) {
+                case 1:
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    break;
+                case 5:
+                    sc.close();
+                    return;
+                default:
+                    System.out.println("Invalid Option Selected");
+                    System.out.println("Press Enter to continue");
+                    sc.next();
+                    break;
+            }
+        }
+    }
+
+    public static void clear() {
+        // ANSI escape code to clear the screen and move cursor to top-left
+        System.out.print("\033[H\033[2J");
+        System.out.flush();
+    }
+
+    static void test() {
+        HotelManager manager = new HotelManager();
         // Seed rooms
         manager.addRoom(new Room(101, ROOM_TYPE.SINGLE, 2000));
         manager.addRoom(new Room(102, ROOM_TYPE.SINGLE, 2200));
