@@ -356,6 +356,12 @@ public class App {
                 // Test
                 case 4:
                     test();
+                    System.out.println();
+                    System.out.println("Tests Completed");
+                    System.out.println("Press Enter to continue");
+                    System.out.println();
+                    sc.nextLine();
+                    sc.nextLine();
                     break;
                 // Exit
                 case 5:
@@ -364,29 +370,32 @@ public class App {
                 default:
                     System.out.println("Invalid Option Selected");
                     System.out.println("Press Enter to continue");
-                    sc.next();
+                    sc.nextLine();
+                    sc.nextLine();
                     break;
             }
         }
     }
 
     static void manageroom(HotelManager manager, Scanner sc) {
+        int roomno;
+        Room room;
         while (true) {
             clear();
             System.out.println("This is the Hotel Room management Menu");
             System.out.println("    1) Create Room");
             System.out.println("    2) View Created Rooms");
-            System.out.println("    3) ");
-            System.out.println("    4) ");
-            System.out.println("    5) ");
+            System.out.println("    3) Edit Room Details");
+            System.out.println("    4) Delete Room");
+            System.out.println("    5) Exit Menu");
             System.out.println("Enter (1/2/3/4/5)?");
             System.out.print('>');
             int op = sc.nextInt();
+            clear();
             switch (op) {
-               
+                // create room
                 case 1:
                     try {
-                        clear();
                         System.out.println("Enter Room Price Per night");
                         System.out.print('>');
                         int pricepernight = sc.nextInt();
@@ -410,9 +419,8 @@ public class App {
                     }
 
                     break;
-               
+                // list all created rooms
                 case 2:
-                    clear();
                     System.out.println("Created Rooms:");
                     for (Room b : manager.allRooms()) {
                         System.out.println("");
@@ -424,25 +432,100 @@ public class App {
                     }
 
                     System.out.println("Press Enter to continue");
-                    sc.next();
+                    sc.nextLine();
+                    sc.nextLine();
                     break;
-               
+                // edit a given room
                 case 3:
-                    managebooking(manager, sc);
+                    System.out.println("Enter The room number to Edit");
+                    System.out.print('>');
+                    roomno = sc.nextInt();
 
+                    try {
+                        clear();
+                        room = manager.requireRoom(roomno);
+                        System.out.println("Available Parameters");
+                        System.out.println("    1) Change Price per Night");
+                        System.out.println("    2) Change Room Type");
+                        System.out.println("Enter The room number to Edit (1/2)?");
+                        System.out.print('>');
+                        int opparam = sc.nextInt();
+                        clear();
+                        if (opparam == 1) {
+                            System.out.println("Currently set Price Per Night is " + room.getPricePerNight());
+                            System.out.println("Enter The New Price Per Night to Set");
+                            System.out.print('>');
+                            room.setPricePerNight(sc.nextInt());
+                        } else if (opparam == 2) {
+                            System.out.println("Currently set Room Type is " + room.getType());
+                            System.out.println("Enter The New Room Type to Set");
+                            System.out.println("Enter Room Type");
+                            System.out.println("Available Options");
+                            System.out.println("    1) Single room");
+                            System.out.println("    2) Double room");
+                            System.out.println("    3) Deluxe room");
+                            System.out.println("Enter (1/2/3)?");
+                            System.out.print('>');
+                            room.setType(ROOM_TYPE.enumfromint(sc.nextInt()));
+                        } else {
+                            System.out.println("Invalid Option Selected");
+                            System.out.println("Press Enter to continue");
+                            sc.nextLine();
+                            sc.nextLine();
+                        }
+
+                        System.out.print('>');
+                    } catch (NoSuchElementException e) {
+                        clear();
+                        System.out.println("Room " + roomno + " Not Found");
+                        System.out.println("Press Enter to continue");
+                        sc.nextLine();
+                        sc.nextLine();
+                    }
                     break;
-  
+                // delete a given room
                 case 4:
-                    
-                    break;
+                    System.out.println("Enter The room number to Delete");
+                    System.out.print('>');
+                    roomno = sc.nextInt();
+                    try {
+                        clear();
+                        room = manager.requireRoom(roomno);
+                        System.out.println("Are you sure you want to delete Room " + room.getRoomNumber() + " (y/n) ");
+                        System.out.print('>');
+                        String approval = sc.next();
+                        approval.toLowerCase();
+                        char yn = approval.charAt(0);
+                        if (yn == 'y') {
+                            clear();
+                            System.out.println("Deleted Room NO: " + room.getRoomNumber());
+                            manager.removeRoom(room.getRoomNumber());
+                            System.out.println("Press Enter to continue");
+                            sc.nextLine();
+                            sc.nextLine();
+                        } else {
+                            clear();
+                            System.out.println("Cancelled room Deleation");
+                            System.out.println("Press Enter to continue");
+                            sc.nextLine();
+                            sc.nextLine();
+                        }
+                    } catch (NoSuchElementException e) {
+                        System.out.println("Room " + roomno + " Not Found");
+                        System.out.println("Press Enter to continue");
+                        sc.nextLine();
+                        sc.nextLine();
+                    }
 
+                    break;
+                // exit the sub menu
                 case 5:
-                    
                     return;
                 default:
                     System.out.println("Invalid Option Selected");
                     System.out.println("Press Enter to continue");
-                    sc.next();
+                    sc.nextLine();
+                    sc.nextLine();
                     break;
             }
         }
@@ -459,6 +542,7 @@ public class App {
             System.out.println("    5) Exit Menu");
             System.out.print('>');
             int op = sc.nextInt();
+            clear();
             switch (op) {
                 case 1:
                     break;
@@ -474,7 +558,8 @@ public class App {
                 default:
                     System.out.println("Invalid Option Selected");
                     System.out.println("Press Enter to continue");
-                    sc.next();
+                    sc.nextLine();
+                    sc.nextLine();
                     break;
             }
         }
@@ -488,9 +573,10 @@ public class App {
             System.out.println("    2) ");
             System.out.println("    3) ");
             System.out.println("    4) ");
-            System.out.println("    5) ");
+            System.out.println("    5) Exit Menu");
             System.out.print('>');
             int op = sc.nextInt();
+            clear();
             switch (op) {
                 case 1:
                     break;
@@ -506,7 +592,8 @@ public class App {
                 default:
                     System.out.println("Invalid Option Selected");
                     System.out.println("Press Enter to continue");
-                    sc.next();
+                    sc.nextLine();
+                    sc.nextLine();
                     break;
             }
         }
