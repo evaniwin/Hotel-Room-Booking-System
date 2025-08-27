@@ -380,6 +380,7 @@ public class App {
     static void manageroom(HotelManager manager, Scanner sc) {
         int roomno;
         Room room;
+        ROOM_TYPE type;
         while (true) {
             clear();
             System.out.println("This is the Hotel Room management Menu");
@@ -407,7 +408,7 @@ public class App {
                         System.out.println("    3) Deluxe room");
                         System.out.println("Enter (1/2/3)?");
                         System.out.print('>');
-                        ROOM_TYPE type = ROOM_TYPE.enumfromint(sc.nextInt());
+                        type = ROOM_TYPE.enumfromint(sc.nextInt());
                         clear();
                         System.out.println("Enter Room Number To assign to room");
                         System.out.print('>');
@@ -421,14 +422,39 @@ public class App {
                     break;
                 // list all created rooms
                 case 2:
-                    System.out.println("Created Rooms:");
-                    for (Room b : manager.allRooms()) {
-                        System.out.println("");
-                        System.out.println("    " + b);
-                        System.out.println("        | Room Number: " + b.getRoomNumber());
-                        System.out.println("        | Room Type: " + b.getType());
-                        System.out.println("        | Price Per Night: " + b.getPricePerNight());
-                        System.out.println("");
+                    System.out.println("Enter Room Type to display");
+                    System.out.println("Available Options");
+                    System.out.println("    1) Single room");
+                    System.out.println("    2) Double room");
+                    System.out.println("    3) Deluxe room");
+                    System.out.println("    4) All rooms");
+                    System.out.println("Enter (1/2/3/4)?");
+                    System.out.print('>');
+                    int selection = sc.nextInt();
+                    clear();
+                    try {
+                        type = ROOM_TYPE.enumfromint(selection);
+                        System.out.println("Existing Rooms of type '" + type + "' :");
+                        for (Room b : manager.allRooms()) {
+                            if (type != b.getType())
+                                continue;
+                            System.out.println("");
+                            System.out.println("    " + b);
+                            System.out.println("        | Room Number: " + b.getRoomNumber());
+                            System.out.println("        | Room Type: " + b.getType());
+                            System.out.println("        | Price Per Night: " + b.getPricePerNight());
+                            System.out.println("");
+                        }
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("Existing Rooms of all types");
+                        for (Room b : manager.allRooms()) {
+                            System.out.println("");
+                            System.out.println("    " + b);
+                            System.out.println("        | Room Number: " + b.getRoomNumber());
+                            System.out.println("        | Room Type: " + b.getType());
+                            System.out.println("        | Price Per Night: " + b.getPricePerNight());
+                            System.out.println("");
+                        }
                     }
 
                     System.out.println("Press Enter to continue");
@@ -535,24 +561,42 @@ public class App {
         while (true) {
             clear();
             System.out.println("This is the Hotel Guest management Menu");
-            System.out.println("    1) ");
-            System.out.println("    2) ");
-            System.out.println("    3) ");
-            System.out.println("    4) ");
+            System.out.println("    1) Register New Guest");
+            System.out.println("    2) List Registered Guests");
+            System.out.println("    3) Modify Guest Details");
+            System.out.println("    4) Delete Guest Registeration");
             System.out.println("    5) Exit Menu");
             System.out.print('>');
             int op = sc.nextInt();
             clear();
             switch (op) {
                 case 1:
+                    System.out.println("Enter Details of the Guest to register");
+                    System.out.println("Enter Guest Name");
+                    System.out.print('>');
+                    sc.nextLine();
+                    String name = sc.nextLine();
+                    System.out.println("Enter Guest Phonenumber");
+                    System.out.print('>');
+                    String phone = sc.next();
+                    System.out.println("Enter Guest Email");
+                    System.out.print('>');
+                    String email = sc.next();
+                    manager.registerGuest(name, phone, email);
                     break;
+                // list guests
                 case 2:
+
                     break;
+                // edit guest
                 case 3:
+
                     break;
+                // delete guest
                 case 4:
-                    test();
+
                     break;
+                // exit menu
                 case 5:
                     return;
                 default:
