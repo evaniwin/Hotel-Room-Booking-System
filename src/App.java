@@ -1,4 +1,4 @@
-import java.io.Console;
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -246,6 +246,24 @@ class HotelManager {
         return true;
     }
 
+    public boolean PrintRoomAvailable(LocalDate start, LocalDate endExclusive) {
+        System.out.println("Available Rooms For Selected Date");
+        System.out.println();
+        for (Room room : rooms.values()) {
+            for (Booking b : bookings.values()) {
+                if (b.getRoomNumber() == room.getRoomNumber() && !b.overlaps(start, endExclusive)) {
+                    System.out.println("");
+                    System.out.println("    " + b);
+                    System.out.println("        | Room Number: " + room.getRoomNumber());
+                    System.out.println("        | Room Type: " + room.getType());
+                    System.out.println("        | Price Per Night: " + room.getPricePerNight());
+                    System.out.println("");
+                }
+            }
+        }
+        return true;
+    }
+
     // ---------------- Guest Management ----------------
     public Guest registerGuest(String name, String phone, String email) {
         int id = nextGuestId.getAndIncrement();
@@ -297,14 +315,14 @@ class HotelManager {
         return r;
     }
 
-    private Guest requireGuest(int guestId) {
+    public Guest requireGuest(int guestId) {
         Guest g = guests.get(guestId);
         if (g == null)
             throw new NoSuchElementException("Guest not found: " + guestId);
         return g;
     }
 
-    private Booking requireBooking(int bookingId) {
+    public Booking requireBooking(int bookingId) {
         Booking b = bookings.get(bookingId);
         if (b == null)
             throw new NoSuchElementException("Booking not found: " + bookingId);
@@ -610,28 +628,147 @@ public class App {
     }
 
     static void managebooking(HotelManager manager, Scanner sc) {
+        LocalDate checkin;
+        LocalDate checkout;
+        int room, guestid, bookingid, op;
         while (true) {
             clear();
             System.out.println("This is the Hotel Booking management Menu");
-            System.out.println("    1) ");
-            System.out.println("    2) ");
-            System.out.println("    3) ");
-            System.out.println("    4) ");
+            System.out.println("    1) Book Room");
+            System.out.println("    2) View Bookings For Room");
+            System.out.println("    3) Calculate Bill");
+            System.out.println("    4) Cancel Booking");
             System.out.println("    5) Exit Menu");
             System.out.print('>');
-            int op = sc.nextInt();
+            op = sc.nextInt();
             clear();
             switch (op) {
+                // Book Room
                 case 1:
+                    System.out.println("Enter Checkin Date");
+                    checkin = getdatefromuser(sc);
+                    System.out.println("Enter Checkout Date");
+                    checkout = getdatefromuser(sc);
+                    while (true) {
+                        clear();
+                        System.out.println("Enter the room to book");
+                        System.out.print('>');
+                        room = sc.nextInt();
+                        try {
+                            manager.requireRoom(room);
+                            if (!manager.isRoomAvailable(room, checkin, checkout)) {
+                                System.out.println("The Room is already booked for the selected dates");
+                                System.out.println("Press Enter to continue");
+                                sc.nextLine();
+                                sc.nextLine();
+                                continue;
+
+                            }
+                            break;
+                        } catch (NoSuchElementException e) {
+                            System.out.println("The chosen Room Does not Exist");
+                            System.out.println("Press Enter to continue");
+                            sc.nextLine();
+                            sc.nextLine();
+
+                        }
+                    }
+                    manager.PrintRoomAvailable(checkin, checkout);
+                    while (true) {
+                        clear();
+                        System.out.println("Enter the guest id of guest to book room  for");
+                        System.out.print('>');
+                        guestid = sc.nextInt();
+                        try {
+                            manager.getGuest(guestid);
+                            break;
+                        } catch (NoSuchElementException e) {
+                            System.out.println("The chosen Guest Does not Exist");
+                            System.out.println("Press Enter to continue");
+                            sc.nextLine();
+                            sc.nextLine();
+                            continue;
+                        }
+                    }
+                    manager.bookRoom(guestid, room, checkin, checkout);
                     break;
+                // List bookings
                 case 2:
+                    System.out.println("Enter the room number of the room to view bookings for");
+                    System.out.println(">");
+                    room = sc.nextInt();
+                    try {
+                        manager.requireRoom(room);
+                    } catch (Exception e) {
+                        System.out.println("The room Entered is not a valid room");
+                        System.out.println("Press Enter to continue");
+                        sc.nextLine();
+                        sc.nextLine();
+                        break;
+                    }
+                    System.out.println("Bookings For room no: " + room);
+                    for (Booking b : manager.allBookings()) {
+                        if (b.getRoomNumber() != room)
+                            continue;
+                        System.out.println("");
+                        System.out.println("    " + b);
+                        System.out.println("        | Booking id: " + b.getId());
+                        System.out.println("        | Guest id: " + b.getGuestId());
+                        System.out.println("        | CheckIn time: " + b.getCheckIn());
+                        System.out.println("        | CheckOut time: " + b.getCheckOut());
+                        System.out.println("");
+                    }
+                    System.out.println("Press Enter to continue");
+                    sc.nextLine();
+                    sc.nextLine();
                     break;
                 case 3:
+                    System.out.println("Enter the Booking id for which the bill must be calculated");
+                    System.out.print('>');
+                    bookingid = sc.nextInt();
+                    try {
+                        manager.requireBooking(bookingid);
+                    } catch (Exception e) {
+                        System.out.println("The entered booking is not a valid booking");
+                        break;
+                    }
+                    System.out.println("The Bill for booking is :" + manager.calculateBill(bookingid));
+                    System.out.println("Press Enter to continue");
+                    sc.nextLine();
+                    sc.nextLine();
                     break;
                 case 4:
+                    System.out.println("Enter Id of booking to cancel");
+                    bookingid = sc.nextInt();
+                    try {
+                        manager.requireBooking(bookingid);
+                        manager.cancelBooking(bookingid);
+                    } catch (NoSuchElementException e) {
+                        System.out.println("Invalid Booking Id selected");
+                        System.out.println("Do you want to see all available bookings");
+                        System.out.println("    1) yes");
+                        System.out.println("    2) No");
+                        System.out.print('>');
+                        int choice = sc.nextInt();
+                        if (choice == 1) {
+
+                            for (Booking b : manager.allBookings()) {
+                                System.out.println("");
+                                System.out.println("    " + b);
+                                System.out.println("        | Booking id: " + b.getId());
+                                System.out.println("        | Guest id: " + b.getGuestId());
+                                System.out.println("        | CheckIn time: " + b.getCheckIn());
+                                System.out.println("        | CheckOut time: " + b.getCheckOut());
+                                System.out.println("");
+                            }
+
+                        }
+                        System.out.println("Press Enter to continue");
+                        sc.nextLine();
+                        sc.nextLine();
+                    }
                     break;
                 case 5:
-                    sc.close();
                     return;
                 default:
                     System.out.println("Invalid Option Selected");
@@ -639,6 +776,30 @@ public class App {
                     sc.nextLine();
                     sc.nextLine();
                     break;
+            }
+        }
+    }
+
+    static LocalDate getdatefromuser(Scanner sc) {
+        while (true) {
+            clear();
+            try {
+                System.out.println("Enter The Year");
+                System.out.print('>');
+                int year = sc.nextInt();
+                System.out.println("Enter The Month");
+                System.out.print('>');
+                int month = sc.nextInt();
+                System.out.println("Enter The Day of Month");
+                System.out.print('>');
+                int day = sc.nextInt();
+                return LocalDate.of(year, month, day);
+            } catch (DateTimeException e) {
+                clear();
+                System.out.println("Out of Range Date Values Provided :" + e);
+                System.out.println("Press Enter to continue");
+                sc.nextLine();
+                sc.nextLine();
             }
         }
     }
