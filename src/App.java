@@ -276,7 +276,14 @@ class HotelManager {
         return requireGuest(guestId);
     }
 
-    // TODO Remove/unregister guest
+    public Guest removeGuest(int guestid) {
+        // cancel all bookings
+        for (Booking b : bookings.values()) {
+            if (b.getGuestId() == guestid)
+                cancelBooking(b.getId());
+        }
+        return guests.remove(guestid);
+    }
 
     // ---------------- Booking Operations ----------------
     public Booking bookRoom(int guestId, int roomNumber, LocalDate checkIn, LocalDate checkOut) {
@@ -396,7 +403,7 @@ public class App {
     }
 
     static void manageroom(HotelManager manager, Scanner sc) {
-        int roomno;
+        int roomno, choice;
         Room room;
         ROOM_TYPE type;
         while (true) {
@@ -493,14 +500,14 @@ public class App {
                         System.out.println("    2) Change Room Type");
                         System.out.println("Enter The room number to Edit (1/2)?");
                         System.out.print('>');
-                        int opparam = sc.nextInt();
+                        choice = sc.nextInt();
                         clear();
-                        if (opparam == 1) {
+                        if (choice == 1) {
                             System.out.println("Currently set Price Per Night is " + room.getPricePerNight());
                             System.out.println("Enter The New Price Per Night to Set");
                             System.out.print('>');
                             room.setPricePerNight(sc.nextInt());
-                        } else if (opparam == 2) {
+                        } else if (choice == 2) {
                             System.out.println("Currently set Room Type is " + room.getType());
                             System.out.println("Enter The New Room Type to Set");
                             System.out.println("Enter Room Type");
@@ -535,32 +542,33 @@ public class App {
                     try {
                         clear();
                         room = manager.requireRoom(roomno);
-                        System.out.println("Are you sure you want to delete Room " + room.getRoomNumber() + " (y/n) ");
-                        System.out.print('>');
-                        String approval = sc.next();
-                        approval.toLowerCase();
-                        char yn = approval.charAt(0);
-                        if (yn == 'y') {
-                            clear();
-                            System.out.println("Deleted Room NO: " + room.getRoomNumber());
-                            manager.removeRoom(room.getRoomNumber());
-                            System.out.println("Press Enter to continue");
-                            sc.nextLine();
-                            sc.nextLine();
-                        } else {
-                            clear();
-                            System.out.println("Cancelled room Deleation");
-                            System.out.println("Press Enter to continue");
-                            sc.nextLine();
-                            sc.nextLine();
-                        }
+
                     } catch (NoSuchElementException e) {
                         System.out.println("Room " + roomno + " Not Found");
                         System.out.println("Press Enter to continue");
                         sc.nextLine();
                         sc.nextLine();
+                        break;
                     }
-
+                    System.out.println("Are you sure you want to delete Room " + room.getRoomNumber() + " (y/n) ");
+                    System.out.println("    1) yes");
+                    System.out.println("    2) No");
+                    System.out.print('>');
+                    choice = sc.nextInt();
+                    if (choice == 1) {
+                        clear();
+                        System.out.println("Deleted Room NO: " + room.getRoomNumber());
+                        manager.removeRoom(room.getRoomNumber());
+                        System.out.println("Press Enter to continue");
+                        sc.nextLine();
+                        sc.nextLine();
+                    } else {
+                        clear();
+                        System.out.println("Cancelled room Deletion");
+                        System.out.println("Press Enter to continue");
+                        sc.nextLine();
+                        sc.nextLine();
+                    }
                     break;
                 // exit the sub menu
                 case 5:
@@ -576,6 +584,8 @@ public class App {
     }
 
     static void manageguest(HotelManager manager, Scanner sc) {
+        int guestid, choice;
+        Guest guest;
         while (true) {
             clear();
             System.out.println("This is the Hotel Guest management Menu");
@@ -604,14 +614,124 @@ public class App {
                     break;
                 // list guests
                 case 2:
-
+                    for (Guest g : manager.allGuests()) {
+                        System.out.println("");
+                        System.out.println("    " + g);
+                        System.out.println("        | Guest Id: " + g.getId());
+                        System.out.println("        | Guest Name: " + g.getName());
+                        System.out.println("        | Guest Email: " + g.getEmail());
+                        System.out.println("        | Guest Phone: " + g.getPhone());
+                        System.out.println("        Bookings");
+                        for (int id : g.getBookingIds()) {
+                            System.out.println("            | Booking Id: " + id);
+                        }
+                        System.out.println("");
+                    }
+                    System.out.println("Press Enter to continue");
+                    sc.nextLine();
+                    sc.nextLine();
                     break;
                 // edit guest
                 case 3:
-
+                    System.out.println("Enter Guest Id of whose parameters to edit");
+                    System.out.print('>');
+                    guestid = sc.nextInt();
+                    try {
+                        guest = manager.requireGuest(guestid);
+                    } catch (NoSuchElementException e) {
+                        System.out.println("The Entered guest id does not belong to any registered guest");
+                        System.out.println("Press Enter to continue");
+                        sc.nextLine();
+                        sc.nextLine();
+                        break;
+                    }
+                    while (true) {
+                        clear();
+                        System.out.println("Current Guest Details");
+                        System.out.println("    " + guest);
+                        System.out.println("        | Guest Id: " + guest.getId());
+                        System.out.println("        | Guest Name: " + guest.getName());
+                        System.out.println("        | Guest Email: " + guest.getEmail());
+                        System.out.println("        | Guest Phone: " + guest.getPhone());
+                        System.out.println("        Bookings");
+                        for (int id : guest.getBookingIds()) {
+                            System.out.println("            | Booking Id: " + id);
+                        }
+                        System.out.println("");
+                        System.out.println("Enter The Property of Guest '" + guestid + "' To modify");
+                        System.out.println("    1) Modify Guest Name");
+                        System.out.println("    2) Modify Guest Email");
+                        System.out.println("    3) Modify Guest Phone number");
+                        System.out.println("    4) Cancel Modification");
+                        System.out.print('>');
+                        choice = sc.nextInt();
+                        switch (choice) {
+                            case 1:
+                                System.out.println("Enter New name For Guest");
+                                System.out.print('>');
+                                sc.nextLine();
+                                guest.setName(sc.nextLine());
+                                break;
+                            case 2:
+                                System.out.println("Enter New Email For Guest");
+                                System.out.print('>');
+                                sc.nextLine();
+                                guest.setEmail(sc.nextLine());
+                                break;
+                            case 3:
+                                System.out.println("Enter New Phone number For Guest");
+                                System.out.print('>');
+                                sc.nextLine();
+                                guest.setPhone(sc.nextLine());
+                                break;
+                            case 4:
+                                break;
+                            default:
+                                System.out.println("Invalid Option Selected");
+                                System.out.println("Press Enter to continue");
+                                sc.nextLine();
+                                sc.nextLine();
+                                continue;
+                        }
+                        break;
+                    }
                     break;
                 // delete guest
                 case 4:
+                    System.out.println("Enter The Guest Id of Guest to UnRegister");
+                    System.out.print('>');
+                    guestid = sc.nextInt();
+                    try {
+                        clear();
+                        guest = manager.requireGuest(guestid);
+
+                    } catch (NoSuchElementException e) {
+                        System.out.println("Guest with Guest id:  " + guestid + " Not Found");
+                        System.out.println("Press Enter to continue");
+                        sc.nextLine();
+                        sc.nextLine();
+                        break;
+                    }
+                    System.out.println("Are you sure you want to UnRegister guest " + guest.getId());
+                    System.out.println("    1) yes");
+                    System.out.println("    2) No");
+                    System.out.print('>');
+                    choice = sc.nextInt();
+                    if (choice == 1) {
+                        clear();
+                        System.out.println("Unregistered Guest Id: " + guest.getId());
+                        manager.removeGuest(guest.getId());
+                        System.out.println("Press Enter to continue");
+                        sc.nextLine();
+                        sc.nextLine();
+                    } else {
+                        clear();
+                        System.out.println("Cancelled Guest Unregisteration");
+                        System.out.println("Press Enter to continue");
+                        sc.nextLine();
+                        sc.nextLine();
+                        break;
+                    }
 
                     break;
                 // exit menu
@@ -645,10 +765,8 @@ public class App {
             switch (op) {
                 // Book Room
                 case 1:
-                    System.out.println("Enter Checkin Date");
-                    checkin = getdatefromuser(sc);
-                    System.out.println("Enter Checkout Date");
-                    checkout = getdatefromuser(sc);
+                    checkin = getdatefromuser(sc, "Enter Checkin Date");
+                    checkout = getdatefromuser(sc, "Enter Checkout Date");
                     while (true) {
                         clear();
                         System.out.println("Enter the room to book");
@@ -695,7 +813,7 @@ public class App {
                 // List bookings
                 case 2:
                     System.out.println("Enter the room number of the room to view bookings for");
-                    System.out.println(">");
+                    System.out.print(">");
                     room = sc.nextInt();
                     try {
                         manager.requireRoom(room);
@@ -780,9 +898,10 @@ public class App {
         }
     }
 
-    static LocalDate getdatefromuser(Scanner sc) {
+    static LocalDate getdatefromuser(Scanner sc, String prompt) {
         while (true) {
             clear();
+            System.out.println(prompt);
             try {
                 System.out.println("Enter The Year");
                 System.out.print('>');
