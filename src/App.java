@@ -3,6 +3,18 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.swing.*;
+import javax.swing.border.*;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Button;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Insets;
+import java.awt.event.*;
+
 
 enum ROOM_TYPE {
     SINGLE, DOUBLE, DELUXE;
@@ -221,6 +233,7 @@ class HotelManager {
         r.setPricePerNight(newPrice);
     }
 
+    // TODO REMOVE METHOD
     public void updateRoomType(int roomNumber, ROOM_TYPE newType) {
         Room r = requireRoom(roomNumber);
         r.setType(newType);
@@ -349,57 +362,253 @@ class HotelManager {
     }
 }
 
+class Cardpanel {
+    JPanel main;
+    JPanel sidebar;
+    JPanel mainpanel;
+    JPanel psidenav;
+    JPanel psidecontrols;
+
+    Cardpanel(int pan,ActionListener navlist) {
+        GridBagConstraints con = new GridBagConstraints();
+        con.fill = GridBagConstraints.BOTH;
+        main = new JPanel(new GridBagLayout());
+        main.setBackground(new Color(100,100,100));
+        sidebar = new JPanel(new GridBagLayout());
+        sidebar.setOpaque(false);
+        mainpanel = new JPanel(new GridBagLayout());
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridheight = 1;
+        con.gridwidth = 1;
+        con.weightx = 1.0;
+        con.weighty = 1.0;
+        main.add(sidebar, con);
+        con.gridx = 1;
+        con.gridy = 0;
+        con.gridheight = 1;
+        con.gridwidth = 3;
+        con.weightx = 3.0;
+        con.weighty = 1.0;
+        main.add(mainpanel, con);
+        createsidepanel(pan,navlist);
+    }
+
+    void createsidepanel(int pan,ActionListener navlist) {
+
+        psidenav = createNavPanel(pan,navlist);
+        psidecontrols = createControlsPanel();
+
+        GridBagConstraints sidebarConstraints = new GridBagConstraints();
+        sidebarConstraints.fill = GridBagConstraints.BOTH;
+        sidebarConstraints.weightx = 1.0;
+
+        sidebarConstraints.gridx = 0;
+        sidebarConstraints.gridy = 0;
+        sidebarConstraints.weighty = 1.0;
+        sidebarConstraints.insets = new Insets(0, 0, 5, 0);
+        sidebar.add(psidenav, sidebarConstraints);
+
+        sidebarConstraints.gridy = 1;
+        sidebarConstraints.weighty = 4.0;
+        sidebarConstraints.insets = new Insets(0, 0, 0, 0);
+        sidebar.add(psidecontrols, sidebarConstraints);
+    }
+
+    private JPanel createNavPanel(int pan,ActionListener navlist) {
+
+        JPanel navPanel = new JPanel(new GridBagLayout());
+        navPanel.setBackground(Color.LIGHT_GRAY);
+
+        // Set the border
+        Border lineBorder = new MatteBorder(3, 3, 3, 1, Color.GRAY);
+        Border paddingBorder = new EmptyBorder(0, 10, 10, 0);
+        navPanel.setBorder(new CompoundBorder(lineBorder, paddingBorder));
+
+        GridBagConstraints navConstraints = new GridBagConstraints();
+        navConstraints.fill = GridBagConstraints.BOTH;
+        navConstraints.weightx = 1.0;
+        navConstraints.weighty = 1.0;
+        navConstraints.gridx = 0;
+
+        // Create and add the title label
+        JLabel titleLabel = new JLabel("Management Menu");
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        Font boldFont = new Font(titleLabel.getFont().getName(), Font.BOLD, titleLabel.getFont().getSize());
+        titleLabel.setFont(boldFont);
+        navConstraints.gridy = 0;
+        navPanel.add(titleLabel, navConstraints);
+
+        // Create buttons
+        Color maincol = new Color(150,150,150);
+        Color selectcol = Color.GRAY;
+        Color hoverColor = new Color(130,180,190);
+        String[] buttonLabels = { "Home", "Room Management", "Guest Management", "Booking Management" };
+        for (int i = 0; i < buttonLabels.length; i++) {
+            JButton button = new JButton(buttonLabels[i]);
+            button.setContentAreaFilled(true);
+            button.setBorderPainted(false);
+            button.setOpaque(true);
+            button.setFocusPainted(false);
+            Color baseColor;
+            if (pan == i) {
+                baseColor = selectcol;
+            } else {
+                baseColor = maincol;
+            }
+            button.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    if (baseColor != selectcol) {
+                        button.setBackground(hoverColor);
+                    }
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    button.setBackground(baseColor);
+                }
+            });
+            button.setBackground(baseColor);
+            button.addActionListener(navlist);
+            navConstraints.gridy = i + 1;
+            navPanel.add(button, navConstraints);
+        }
+
+        return navPanel;
+    }
+
+    private JPanel createControlsPanel() {
+        JPanel controlsPanel = new JPanel(new GridBagLayout());
+        controlsPanel.setBackground(Color.LIGHT_GRAY);
+
+        // Set the border
+        Border lineBorder = new MatteBorder(3, 3, 3, 3, Color.GRAY);
+        Border paddingBorder = new EmptyBorder(10, 10, 10, 10);
+        controlsPanel.setBorder(new CompoundBorder(lineBorder, paddingBorder));
+
+        return controlsPanel;
+    }
+}
+class Navevent implements ActionListener{
+    CardLayout cardlayout;
+    JFrame frame;
+    Navevent(CardLayout cardlayout,JFrame frame){
+        this.cardlayout = cardlayout;
+        this.frame =frame;
+    }
+    public void actionPerformed(ActionEvent e){
+        String cmd = e.getActionCommand();
+        String[] buttonLabels = { "Home", "Room Management", "Guest Management", "Booking Management" };
+        String[] cardLabels = { "Home", "room", "guest", "booking" };
+        for (int i = 0; i < buttonLabels.length; i++) {
+            if(cmd == buttonLabels[i]){
+                cardlayout.show(frame.getContentPane(), cardLabels[i]);
+            }
+        }
+    }
+}
+class AppUI {
+    JFrame frame;
+
+    Cardpanel home;
+    Cardpanel roommgmt;
+    Cardpanel guestmgmt;
+    Cardpanel bookingmgmt;
+
+    CardLayout cardlayout;
+
+    AppUI() {
+        frame = new JFrame();
+        frame.setSize(new Dimension(1200, 800));
+        frame.setMinimumSize(new Dimension(800, 600));
+        frame.setTitle("Hotel Management System");
+        cardlayout = new CardLayout(2, 2);
+        frame.setLayout(cardlayout);
+        ActionListener navlist = new Navevent(cardlayout,frame);
+        // Setub card menu and panels
+        home = new Cardpanel(0,navlist);
+        frame.add(home.main, "Home");
+        createhomepanel();
+        roommgmt = new Cardpanel(1,navlist);
+        frame.add(roommgmt.main, "room");
+        createroompanel();
+        guestmgmt = new Cardpanel(2,navlist);
+        frame.add(guestmgmt.main, "guest");
+        createguestpanel();
+        bookingmgmt = new Cardpanel(3,navlist);
+        frame.add(bookingmgmt.main, "booking");
+        createbookingpanel();
+
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+    }
+    private void createhomepanel(){
+
+    }
+    private void createroompanel(){
+
+    }
+    private void createguestpanel(){
+        
+    }
+    private void createbookingpanel(){
+        
+    }
+}
+
 public class App {
     public static void main(String[] args) {
         HotelManager manager = new HotelManager();
+        AppUI ui = new AppUI();
         Scanner sc = new Scanner(System.in);
-        while (true) {
-            clear();
-            System.out.println("This is the Hotel administration Menu");
-            System.out.println("    1) Room Management");
-            System.out.println("    2) Guest Management");
-            System.out.println("    3) Booking Management");
-            System.out.println("    4) Run Tests");
-            System.out.println("    5) Exit Program");
-            System.out.println("Enter (1/2/3/4/5)?");
-            System.out.print('>');
-            int op = sc.nextInt();
-            clear();
-            switch (op) {
-                // room
-                case 1:
-                    manageroom(manager, sc);
-                    break;
-                // guest
-                case 2:
-                    manageguest(manager, sc);
-                    break;
-                // booking
-                case 3:
-                    managebooking(manager, sc);
-                    break;
-                // Test
-                case 4:
-                    test();
-                    System.out.println();
-                    System.out.println("Tests Completed");
-                    System.out.println("Press Enter to continue");
-                    System.out.println();
-                    sc.nextLine();
-                    sc.nextLine();
-                    break;
-                // Exit
-                case 5:
-                    sc.close();
-                    return;
-                default:
-                    System.out.println("Invalid Option Selected");
-                    System.out.println("Press Enter to continue");
-                    sc.nextLine();
-                    sc.nextLine();
-                    break;
-            }
-        }
+        // while (true) {
+        // clear();
+        // System.out.println("This is the Hotel administration Menu");
+        // System.out.println(" 1) Room Management");
+        // System.out.println(" 2) Guest Management");
+        // System.out.println(" 3) Booking Management");
+        // System.out.println(" 4) Run Tests");
+        // System.out.println(" 5) Exit Program");
+        // System.out.println("Enter (1/2/3/4/5)?");
+        // System.out.print('>');
+        // int op = sc.nextInt();
+        // clear();
+        // switch (op) {
+        // // room
+        // case 1:
+        // manageroom(manager, sc);
+        // break;
+        // // guest
+        // case 2:
+        // manageguest(manager, sc);
+        // break;
+        // // booking
+        // case 3:
+        // managebooking(manager, sc);
+        // break;
+        // // Test
+        // case 4:
+        // test();
+        // System.out.println();
+        // System.out.println("Tests Completed");
+        // System.out.println("Press Enter to continue");
+        // System.out.println();
+        // sc.nextLine();
+        // sc.nextLine();
+        // break;
+        // // Exit
+        // case 5:
+        // sc.close();
+        // return;
+        // default:
+        // System.out.println("Invalid Option Selected");
+        // System.out.println("Press Enter to continue");
+        // sc.nextLine();
+        // sc.nextLine();
+        // break;
+        // }
+        // }
     }
 
     static void manageroom(HotelManager manager, Scanner sc) {
@@ -532,6 +741,8 @@ public class App {
                         System.out.println("Press Enter to continue");
                         sc.nextLine();
                         sc.nextLine();
+                    } catch (NullPointerException e) {
+                        System.out.println(e);
                     }
                     break;
                 // delete a given room
