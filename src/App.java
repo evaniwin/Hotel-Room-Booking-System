@@ -15,7 +15,6 @@ import java.awt.Font;
 import java.awt.Insets;
 import java.awt.event.*;
 
-
 enum ROOM_TYPE {
     SINGLE, DOUBLE, DELUXE;
 
@@ -369,11 +368,11 @@ class Cardpanel {
     JPanel psidenav;
     JPanel psidecontrols;
 
-    Cardpanel(int pan,ActionListener navlist) {
+    Cardpanel(int pan, ActionListener navlist) {
         GridBagConstraints con = new GridBagConstraints();
         con.fill = GridBagConstraints.BOTH;
         main = new JPanel(new GridBagLayout());
-        main.setBackground(new Color(100,100,100));
+        main.setBackground(new Color(100, 100, 100));
         sidebar = new JPanel(new GridBagLayout());
         sidebar.setOpaque(false);
         mainpanel = new JPanel(new GridBagLayout());
@@ -391,31 +390,31 @@ class Cardpanel {
         con.weightx = 3.0;
         con.weighty = 1.0;
         main.add(mainpanel, con);
-        createsidepanel(pan,navlist);
+        createsidepanel(pan, navlist);
     }
 
-    void createsidepanel(int pan,ActionListener navlist) {
+    void createsidepanel(int pan, ActionListener navlist) {
 
-        psidenav = createNavPanel(pan,navlist);
+        psidenav = createNavPanel(pan, navlist);
         psidecontrols = createControlsPanel();
 
-        GridBagConstraints sidebarConstraints = new GridBagConstraints();
-        sidebarConstraints.fill = GridBagConstraints.BOTH;
-        sidebarConstraints.weightx = 1.0;
+        GridBagConstraints constr = new GridBagConstraints();
+        constr.fill = GridBagConstraints.BOTH;
+        constr.weightx = 1.0;
 
-        sidebarConstraints.gridx = 0;
-        sidebarConstraints.gridy = 0;
-        sidebarConstraints.weighty = 1.0;
-        sidebarConstraints.insets = new Insets(0, 0, 5, 0);
-        sidebar.add(psidenav, sidebarConstraints);
+        constr.gridx = 0;
+        constr.gridy = 0;
+        constr.weighty = 1.0;
+        constr.insets = new Insets(0, 0, 5, 0);
+        sidebar.add(psidenav, constr);
 
-        sidebarConstraints.gridy = 1;
-        sidebarConstraints.weighty = 4.0;
-        sidebarConstraints.insets = new Insets(0, 0, 0, 0);
-        sidebar.add(psidecontrols, sidebarConstraints);
+        constr.gridy = 1;
+        constr.weighty = 4.0;
+        constr.insets = new Insets(0, 0, 0, 0);
+        sidebar.add(psidecontrols, constr);
     }
 
-    private JPanel createNavPanel(int pan,ActionListener navlist) {
+    private JPanel createNavPanel(int pan, ActionListener navlist) {
 
         JPanel navPanel = new JPanel(new GridBagLayout());
         navPanel.setBackground(Color.LIGHT_GRAY);
@@ -425,24 +424,24 @@ class Cardpanel {
         Border paddingBorder = new EmptyBorder(0, 10, 10, 0);
         navPanel.setBorder(new CompoundBorder(lineBorder, paddingBorder));
 
-        GridBagConstraints navConstraints = new GridBagConstraints();
-        navConstraints.fill = GridBagConstraints.BOTH;
-        navConstraints.weightx = 1.0;
-        navConstraints.weighty = 1.0;
-        navConstraints.gridx = 0;
+        GridBagConstraints constr = new GridBagConstraints();
+        constr.fill = GridBagConstraints.BOTH;
+        constr.weightx = 1.0;
+        constr.weighty = 1.0;
+        constr.gridx = 0;
 
         // Create and add the title label
         JLabel titleLabel = new JLabel("Management Menu");
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         Font boldFont = new Font(titleLabel.getFont().getName(), Font.BOLD, titleLabel.getFont().getSize());
         titleLabel.setFont(boldFont);
-        navConstraints.gridy = 0;
-        navPanel.add(titleLabel, navConstraints);
+        constr.gridy = 0;
+        navPanel.add(titleLabel, constr);
 
         // Create buttons
-        Color maincol = new Color(150,150,150);
+        Color maincol = new Color(150, 150, 150);
         Color selectcol = Color.GRAY;
-        Color hoverColor = new Color(130,180,190);
+        Color hoverColor = new Color(130, 180, 190);
         String[] buttonLabels = { "Home", "Room Management", "Guest Management", "Booking Management" };
         for (int i = 0; i < buttonLabels.length; i++) {
             JButton button = new JButton(buttonLabels[i]);
@@ -471,8 +470,8 @@ class Cardpanel {
             });
             button.setBackground(baseColor);
             button.addActionListener(navlist);
-            navConstraints.gridy = i + 1;
-            navPanel.add(button, navConstraints);
+            constr.gridy = i + 1;
+            navPanel.add(button, constr);
         }
 
         return navPanel;
@@ -490,24 +489,28 @@ class Cardpanel {
         return controlsPanel;
     }
 }
-class Navevent implements ActionListener{
+
+class Navevent implements ActionListener {
     CardLayout cardlayout;
     JFrame frame;
-    Navevent(CardLayout cardlayout,JFrame frame){
+
+    Navevent(CardLayout cardlayout, JFrame frame) {
         this.cardlayout = cardlayout;
-        this.frame =frame;
+        this.frame = frame;
     }
-    public void actionPerformed(ActionEvent e){
+
+    public void actionPerformed(ActionEvent e) {
         String cmd = e.getActionCommand();
         String[] buttonLabels = { "Home", "Room Management", "Guest Management", "Booking Management" };
         String[] cardLabels = { "Home", "room", "guest", "booking" };
         for (int i = 0; i < buttonLabels.length; i++) {
-            if(cmd == buttonLabels[i]){
+            if (cmd == buttonLabels[i]) {
                 cardlayout.show(frame.getContentPane(), cardLabels[i]);
             }
         }
     }
 }
+
 class AppUI {
     JFrame frame;
 
@@ -525,36 +528,22 @@ class AppUI {
         frame.setTitle("Hotel Management System");
         cardlayout = new CardLayout(2, 2);
         frame.setLayout(cardlayout);
-        ActionListener navlist = new Navevent(cardlayout,frame);
+        ActionListener navlist = new Navevent(cardlayout, frame);
         // Setub card menu and panels
-        home = new Cardpanel(0,navlist);
+        home = new Cardpanel(0, navlist);
         frame.add(home.main, "Home");
-        createhomepanel();
-        roommgmt = new Cardpanel(1,navlist);
+        roommgmt = new Cardpanel(1, navlist);
         frame.add(roommgmt.main, "room");
-        createroompanel();
-        guestmgmt = new Cardpanel(2,navlist);
+        guestmgmt = new Cardpanel(2, navlist);
         frame.add(guestmgmt.main, "guest");
-        createguestpanel();
-        bookingmgmt = new Cardpanel(3,navlist);
+        bookingmgmt = new Cardpanel(3, navlist);
         frame.add(bookingmgmt.main, "booking");
-        createbookingpanel();
+
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
     }
-    private void createhomepanel(){
 
-    }
-    private void createroompanel(){
-
-    }
-    private void createguestpanel(){
-        
-    }
-    private void createbookingpanel(){
-        
-    }
 }
 
 public class App {
