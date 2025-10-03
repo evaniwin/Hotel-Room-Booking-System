@@ -9,6 +9,7 @@ import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -366,13 +367,16 @@ class Cardpanel {
     JPanel sidebar;
     JPanel mainpanel;
     JPanel psidenav;
-    JPanel psidecontrols;
+    JPanel psideinfo;
+    JScrollPane scrollPanemainpanel;
+    JPanel innerTiles;
 
     Cardpanel(int pan, ActionListener navlist) {
         GridBagConstraints con = new GridBagConstraints();
         con.fill = GridBagConstraints.BOTH;
         main = new JPanel(new GridBagLayout());
         main.setBackground(new Color(100, 100, 100));
+        main.setBorder(new EmptyBorder(5, 5, 5, 5));
         sidebar = new JPanel(new GridBagLayout());
         sidebar.setOpaque(false);
         mainpanel = new JPanel(new GridBagLayout());
@@ -382,6 +386,7 @@ class Cardpanel {
         con.gridwidth = 1;
         con.weightx = 1.0;
         con.weighty = 1.0;
+        createsidepanel(pan, navlist);
         main.add(sidebar, con);
         con.gridx = 1;
         con.gridy = 0;
@@ -389,14 +394,16 @@ class Cardpanel {
         con.gridwidth = 3;
         con.weightx = 3.0;
         con.weighty = 1.0;
+        configuremainpanel();
+        mainpanel.setOpaque(true);
         main.add(mainpanel, con);
-        createsidepanel(pan, navlist);
+
     }
 
     void createsidepanel(int pan, ActionListener navlist) {
 
         psidenav = createNavPanel(pan, navlist);
-        psidecontrols = createControlsPanel();
+        psideinfo = createControlsPanel();
 
         GridBagConstraints constr = new GridBagConstraints();
         constr.fill = GridBagConstraints.BOTH;
@@ -411,7 +418,7 @@ class Cardpanel {
         constr.gridy = 1;
         constr.weighty = 4.0;
         constr.insets = new Insets(0, 0, 0, 0);
-        sidebar.add(psidecontrols, constr);
+        sidebar.add(psideinfo, constr);
     }
 
     private JPanel createNavPanel(int pan, ActionListener navlist) {
@@ -443,8 +450,19 @@ class Cardpanel {
         Color selectcol = Color.GRAY;
         Color hoverColor = new Color(130, 180, 190);
         String[] buttonLabels = { "Home", "Room Management", "Guest Management", "Booking Management" };
+        String[] images = { "icons/go-home.png", "icons/drive-multidisk.png", "icons/im-user.png",
+                "icons/address-book-new.png" };
         for (int i = 0; i < buttonLabels.length; i++) {
-            JButton button = new JButton(buttonLabels[i]);
+            JButton button = new JButton();
+            JPanel panel = new JPanel(new BorderLayout());
+            JLabel iconLabel = new JLabel(new ImageIcon(images[i]));
+            JLabel textLabel = new JLabel(buttonLabels[i], SwingConstants.CENTER);
+            panel.setOpaque(false);
+            button.setLayout(new BorderLayout());
+            panel.add(iconLabel, BorderLayout.WEST);
+            panel.add(textLabel, BorderLayout.CENTER);
+            button.setActionCommand(buttonLabels[i]);
+            button.add(panel);
             button.setContentAreaFilled(true);
             button.setBorderPainted(false);
             button.setOpaque(true);
@@ -488,6 +506,66 @@ class Cardpanel {
 
         return controlsPanel;
     }
+
+    private void configuremainpanel() {
+        GridBagConstraints con = new GridBagConstraints();
+        Color maincol = new Color(230, 230, 230);
+        con.fill = GridBagConstraints.BOTH;
+        JPanel additionbuttons = new JPanel(new BorderLayout());
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 0;
+        con.fill = GridBagConstraints.HORIZONTAL;
+        additionbuttons.setPreferredSize(new Dimension(0, 50));
+        additionbuttons.setBackground(maincol);
+        Border lineBorder = new MatteBorder(3, 3, 0, 3, Color.GRAY);
+        Border paddingBorder = new EmptyBorder(10, 10, 10, 10);
+        additionbuttons.setBorder(new CompoundBorder(lineBorder, paddingBorder));
+
+        JButton button = new JButton("Create New",new ImageIcon("icons/list-add.png"));
+        button.setBorderPainted(false);
+        button.setOpaque(true);
+        button.setFocusPainted(false);
+        additionbuttons.add(button, BorderLayout.EAST);
+        Color basecol = new Color(160, 160, 160);
+        Color hovercol = new Color(130, 180, 190);
+        button.setBackground(basecol);
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(hovercol);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(basecol);
+            }
+        });
+
+        mainpanel.add(additionbuttons, con);
+
+        innerTiles = new JPanel(new GridBagLayout());
+        scrollPanemainpanel = new JScrollPane(innerTiles, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        con.gridx = 0;
+        con.gridy = 1;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        con.fill = GridBagConstraints.BOTH;
+        innerTiles.setBackground(maincol);
+        scrollPanemainpanel
+                .setBorder(new CompoundBorder(new MatteBorder(0, 3, 3, 3, Color.GRAY), new EmptyBorder(2, 2, 2, 2)));
+        mainpanel.add(scrollPanemainpanel, con);
+    }
+
+    private void configureinfopanel() {
+
+    }
 }
 
 class Navevent implements ActionListener {
@@ -526,7 +604,7 @@ class AppUI {
         frame.setSize(new Dimension(1200, 800));
         frame.setMinimumSize(new Dimension(800, 600));
         frame.setTitle("Hotel Management System");
-        cardlayout = new CardLayout(2, 2);
+        cardlayout = new CardLayout(0, 0);
         frame.setLayout(cardlayout);
         ActionListener navlist = new Navevent(cardlayout, frame);
         // Setub card menu and panels
@@ -538,7 +616,6 @@ class AppUI {
         frame.add(guestmgmt.main, "guest");
         bookingmgmt = new Cardpanel(3, navlist);
         frame.add(bookingmgmt.main, "booking");
-
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
