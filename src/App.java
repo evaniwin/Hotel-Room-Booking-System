@@ -5,15 +5,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.*;
 import javax.swing.border.*;
-import java.awt.CardLayout;
-import java.awt.Color;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.BorderLayout;
-import java.awt.Button;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Insets;
+import java.awt.*;
 import java.awt.event.*;
 
 enum ROOM_TYPE {
@@ -104,7 +96,7 @@ class Guest {
         return email;
     }
 
-    public List<Integer> getBookingIds() {
+    public ArrayList<Integer> getBookingIds() {
         return bookingIds;
     }
 
@@ -239,8 +231,8 @@ class HotelManager {
         r.setType(newType);
     }
 
-    public List<Room> listAvailableRoomsByType(ROOM_TYPE type, LocalDate start, LocalDate endExclusive) {
-        List<Room> result = new ArrayList<>();
+    public ArrayList<Room> listAvailableRoomsByType(ROOM_TYPE type, LocalDate start, LocalDate endExclusive) {
+        ArrayList<Room> result = new ArrayList<>();
         for (Room r : rooms.values()) {
             if (r.getType() == type && isRoomAvailable(r.getRoomNumber(), start, endExclusive)) {
                 result.add(r);
@@ -362,6 +354,56 @@ class HotelManager {
     }
 }
 
+class MyButton extends JButton {
+    Color currentcol;
+    Color borderColor;
+
+    MyButton(Color hoveColor,
+            Color basecol,
+            Color selectcol,
+            Border paddingBorder,
+            MatteBorder matteBorder) {
+        this.currentcol = basecol;
+        this.setBackground(currentcol);
+        this.borderColor = matteBorder.getMatteColor();
+        setBorder(new CompoundBorder(matteBorder, paddingBorder));
+
+        this.addMouseListener(new MouseListener() {
+
+            public void mouseEntered(MouseEvent e) {
+                currentcol = hoveColor;
+                setBackground(currentcol);
+            }
+
+            public void mouseExited(MouseEvent e) {
+                currentcol = basecol;
+                setBackground(currentcol);
+            }
+
+            public void mouseReleased(MouseEvent e) {
+            }
+
+            public void mouseClicked(MouseEvent e) {
+            }
+
+            public void mousePressed(MouseEvent e) {
+            }
+        });
+        this.addFocusListener(new FocusListener() {
+            public void focusGained(FocusEvent e) {
+                MatteBorder border = new MatteBorder(matteBorder.getBorderInsets(), selectcol);
+                setBorder(new CompoundBorder(border, paddingBorder));
+            }
+
+            public void focusLost(FocusEvent e) {
+                MatteBorder border = new MatteBorder(matteBorder.getBorderInsets(), borderColor);
+                setBorder(new CompoundBorder(border, paddingBorder));
+            }
+        });
+    }
+
+}
+
 class Cardpanel {
     JPanel main;
     JPanel sidebar;
@@ -453,7 +495,17 @@ class Cardpanel {
         String[] images = { "icons/go-home.png", "icons/drive-multidisk.png", "icons/im-user.png",
                 "icons/address-book-new.png" };
         for (int i = 0; i < buttonLabels.length; i++) {
-            JButton button = new JButton();
+            Color basecol;
+            if (i == pan) {
+                basecol = selectcol;
+            } else {
+                basecol = maincol;
+            }
+            JButton button = new MyButton(hoverColor,
+                    basecol,
+                    Color.BLUE,
+                    new EmptyBorder(1, 1, 1, 0),
+                    new MatteBorder(3, 3, 3, 3, Color.GRAY));
             JPanel panel = new JPanel(new BorderLayout());
             JLabel iconLabel = new JLabel(new ImageIcon(images[i]));
             JLabel textLabel = new JLabel(buttonLabels[i], SwingConstants.CENTER);
@@ -463,30 +515,6 @@ class Cardpanel {
             panel.add(textLabel, BorderLayout.CENTER);
             button.setActionCommand(buttonLabels[i]);
             button.add(panel);
-            button.setContentAreaFilled(true);
-            button.setBorderPainted(false);
-            button.setOpaque(true);
-            button.setFocusPainted(false);
-            Color baseColor;
-            if (pan == i) {
-                baseColor = selectcol;
-            } else {
-                baseColor = maincol;
-            }
-            button.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    if (baseColor != selectcol) {
-                        button.setBackground(hoverColor);
-                    }
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    button.setBackground(baseColor);
-                }
-            });
-            button.setBackground(baseColor);
             button.addActionListener(navlist);
             constr.gridy = i + 1;
             navPanel.add(button, constr);
@@ -525,26 +553,14 @@ class Cardpanel {
         Border paddingBorder = new EmptyBorder(10, 10, 10, 10);
         additionbuttons.setBorder(new CompoundBorder(lineBorder, paddingBorder));
 
-        JButton button = new JButton("Create New",new ImageIcon("icons/list-add.png"));
-        button.setBorderPainted(false);
-        button.setOpaque(true);
-        button.setFocusPainted(false);
+        JButton button = new MyButton(new Color(130, 180, 190),
+                new Color(160, 160, 160),
+                Color.blue,
+                new EmptyBorder(10, 10, 10, 10),
+                new MatteBorder(3, 3, 3, 3, Color.GRAY));
+        button.setText("Create New");
+        button.setIcon(new ImageIcon("icons/list-add.png"));
         additionbuttons.add(button, BorderLayout.EAST);
-        Color basecol = new Color(160, 160, 160);
-        Color hovercol = new Color(130, 180, 190);
-        button.setBackground(basecol);
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(hovercol);
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(basecol);
-            }
-        });
-
         mainpanel.add(additionbuttons, con);
 
         innerTiles = new JPanel(new GridBagLayout());
