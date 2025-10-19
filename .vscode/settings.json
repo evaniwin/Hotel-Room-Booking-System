@@ -19,6 +19,21 @@
             "database": "evaniwin",
             "username": "evaniwin",
             "password": ""
+        },
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "192.168.122.42",
+            "port": 3306,
+            "driver": "MariaDB",
+            "name": "javahotel",
+            "database": "javahotel",
+            "username": "javahotel",
+            "password": "admin"
         }
     ]
 }

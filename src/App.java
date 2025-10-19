@@ -7,6 +7,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.sql.*;
 
 enum ROOM_TYPE {
     SINGLE, DOUBLE, DELUXE;
@@ -366,6 +367,7 @@ class MyButton extends JButton {
         this.currentcol = basecol;
         this.setBackground(currentcol);
         this.borderColor = matteBorder.getMatteColor();
+        this.setFocusPainted(false);
         setBorder(new CompoundBorder(matteBorder, paddingBorder));
 
         this.addMouseListener(new MouseListener() {
@@ -614,8 +616,10 @@ class AppUI {
     Cardpanel bookingmgmt;
 
     CardLayout cardlayout;
+    Connection conn;
 
     AppUI() {
+
         frame = new JFrame();
         frame.setSize(new Dimension(1200, 800));
         frame.setMinimumSize(new Dimension(800, 600));
@@ -633,8 +637,147 @@ class AppUI {
         bookingmgmt = new Cardpanel(3, navlist);
         frame.add(bookingmgmt.main, "booking");
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
+        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                Database.close();
+                frame.dispose();
+                System.exit(0);
+            }
+        });
+        connectdbprompt();
+    }
+
+    void connectdbprompt() {
+        JFrame dialog = new JFrame();
+        dialog.setSize(new Dimension(400, 300));
+        dialog.setResizable(false);
+        ;
+        dialog.setTitle("Connect to database");
+        dialog.setLayout(new GridBagLayout());
+        GridBagConstraints constr = new GridBagConstraints();
+        constr.fill = GridBagConstraints.HORIZONTAL;
+        constr.insets = new Insets(3, 6, 3, 6);
+
+        JLabel labip = new JLabel("Database IP:");
+        constr.gridx = 0;
+        constr.gridy = 0;
+        constr.gridwidth = 1;
+        constr.gridheight = 1;
+        constr.weightx = 1;
+        constr.weighty = 1;
+        dialog.add(labip, constr);
+        JTextField ip = new JTextField("192.168.122.42", 16);
+        constr.gridx = 1;
+        constr.gridy = 0;
+        constr.gridwidth = 4;
+        constr.gridheight = 1;
+        constr.weightx = 4;
+        constr.weighty = 1;
+        dialog.add(ip, constr);
+
+        JLabel labport = new JLabel("Port:");
+        constr.gridx = 5;
+        constr.gridy = 0;
+        constr.gridwidth = 1;
+        constr.gridheight = 1;
+        constr.weightx = 4;
+        constr.weighty = 1;
+        dialog.add(labport, constr);
+        JTextField port = new JTextField("3306", 5);
+        constr.gridx = 6;
+        constr.gridy = 0;
+        constr.gridwidth = 1;
+        constr.gridheight = 1;
+        constr.weightx = 1;
+        constr.weighty = 1;
+        dialog.add(port, constr);
+        JTextField username = new JTextField("javahotel", 16);
+
+        JLabel labusr = new JLabel("User Name:");
+        constr.gridx = 0;
+        constr.gridy = 1;
+        constr.gridwidth = 1;
+        constr.gridheight = 1;
+        constr.weightx = 1;
+        constr.weighty = 1;
+        dialog.add(labusr, constr);
+        constr.gridx = 1;
+        constr.gridy = 1;
+        constr.gridwidth = 4;
+        constr.gridheight = 1;
+        constr.weightx = 1;
+        constr.weighty = 1;
+        dialog.add(username, constr);
+        JTextField pass = new JTextField("admin", 16);
+
+        JLabel labpass = new JLabel("Password:");
+        constr.gridx = 0;
+        constr.gridy = 2;
+        constr.gridwidth = 1;
+        constr.gridheight = 1;
+        constr.weightx = 1;
+        constr.weighty = 1;
+        dialog.add(labpass, constr);
+        constr.gridx = 1;
+        constr.gridy = 2;
+        constr.gridwidth = 4;
+        constr.gridheight = 1;
+        constr.weightx = 1;
+        constr.weighty = 1;
+        dialog.add(pass, constr);
+
+        JButton button = new MyButton(new Color(130, 180, 190),
+                new Color(160, 160, 160),
+                Color.blue,
+                new EmptyBorder(10, 10, 10, 10),
+                new MatteBorder(3, 3, 3, 3, Color.GRAY));
+        button.setText("Connect");
+        button.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    Database.dbconn = DriverManager.getConnection(
+                            "jdbc:mysql://" + ip.getText() + ":" + port.getText() + "/javahotel", username.getText(),
+                            pass.getText());
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(dialog,
+                            ex,
+                            "Database Connection Error",
+                            JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                JOptionPane.showMessageDialog(dialog,
+                        "DataBase Connected Sucessfully",
+                        "Database Connection Status",
+                        JOptionPane.INFORMATION_MESSAGE);
+                frame.setVisible(true);
+                dialog.dispose();
+            }
+        });
+        constr.gridx = 1;
+        constr.gridy = 3;
+        constr.gridwidth = 4;
+        constr.gridheight = 1;
+        constr.weightx = 4;
+        constr.weighty = 1;
+        dialog.add(button, constr);
+
+        dialog.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        dialog.setVisible(true);
+    }
+}
+
+class Database {
+    static Connection dbconn = null;
+
+    static void close() {
+        try {
+            dbconn.close();
+            System.out.println("connection closed");
+        } catch (Exception ex) {
+            System.out.println("connection unable to close");
+        }
     }
 
 }
@@ -643,6 +786,7 @@ public class App {
     public static void main(String[] args) {
         HotelManager manager = new HotelManager();
         AppUI ui = new AppUI();
+
         Scanner sc = new Scanner(System.in);
         // while (true) {
         // clear();
@@ -662,7 +806,7 @@ public class App {
         // manageroom(manager, sc);
         // break;
         // // guest
-        // case 2:
+        // case 2:Connection conn
         // manageguest(manager, sc);
         // break;
         // // booking
