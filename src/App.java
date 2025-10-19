@@ -370,7 +370,7 @@ class MyButton extends JButton {
         this.setFocusPainted(false);
         setBorder(new CompoundBorder(matteBorder, paddingBorder));
 
-        this.addMouseListener(new MouseListener() {
+        this.addMouseListener(new MouseAdapter() {
 
             public void mouseEntered(MouseEvent e) {
                 currentcol = hoveColor;
@@ -382,16 +382,8 @@ class MyButton extends JButton {
                 setBackground(currentcol);
             }
 
-            public void mouseReleased(MouseEvent e) {
-            }
-
-            public void mouseClicked(MouseEvent e) {
-            }
-
-            public void mousePressed(MouseEvent e) {
-            }
         });
-        this.addFocusListener(new FocusListener() {
+        this.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent e) {
                 MatteBorder border = new MatteBorder(matteBorder.getBorderInsets(), selectcol);
                 setBorder(new CompoundBorder(border, paddingBorder));
@@ -646,10 +638,24 @@ class AppUI {
                 System.exit(0);
             }
         });
-        connectdbprompt();
+        Database.connectdbprompt(frame);
     }
 
-    void connectdbprompt() {
+}
+
+class Database {
+    static Connection dbconn = null;
+
+    static void close() {
+        try {
+            dbconn.close();
+            System.out.println("connection closed");
+        } catch (Exception ex) {
+            System.out.println("connection unable to close");
+        }
+    }
+
+    static void connectdbprompt(JFrame frame) {
         JFrame dialog = new JFrame();
         dialog.setSize(new Dimension(400, 300));
         dialog.setResizable(false);
@@ -751,6 +757,7 @@ class AppUI {
                         "DataBase Connected Sucessfully",
                         "Database Connection Status",
                         JOptionPane.INFORMATION_MESSAGE);
+                checktables(dialog);
                 frame.setVisible(true);
                 dialog.dispose();
             }
@@ -762,24 +769,107 @@ class AppUI {
         constr.weightx = 4;
         constr.weighty = 1;
         dialog.add(button, constr);
-
         dialog.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         dialog.setVisible(true);
     }
-}
 
-class Database {
-    static Connection dbconn = null;
-
-    static void close() {
+    static void checktables(JFrame dialog) {
         try {
-            dbconn.close();
-            System.out.println("connection closed");
+            Statement stmt = dbconn.createStatement();
+            String[] tables = {
+                    "CREATE TABLE IF NOT EXISTS guest (guestid INT NOT NULL auto_increment PRIMARY KEY,name TEXT NOT NULL,phone TEXT NOT NULL,email TEXT NOT NULL);",
+                    "CREATE TABLE IF NOT EXISTS room (roomid INT NOT NULL auto_increment PRIMARY KEY,room_type INT NOT NULL,price DOUBLE NOT NULL);",
+                    "CREATE TABLE IF NOT EXISTS booking ( bookingid INT NOT NULL auto_increment PRIMARY KEY,checkin DATE,checkout DATE,roomid INT NOT NULL,guestid INT NOT NULL,CONSTRAINT fk_roomid FOREIGN KEY (roomid) REFERENCES room(roomid),CONSTRAINT fk_guestid FOREIGN KEY (guestid) REFERENCES guest(guestid));" };
+            for (int i = 0; i < tables.length; i++) {
+                stmt.executeUpdate(tables[i]);
+            }
+
         } catch (Exception ex) {
-            System.out.println("connection unable to close");
+            JOptionPane.showMessageDialog(dialog,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
+}
 
+interface Dbtable {
+    void add();
+
+    void remove();
+
+    void edit();
+
+    void get();
+
+    void loadall();
+
+}
+
+class Dbtablebooking implements Dbtable {
+    public void add() {
+
+    }
+
+    public void remove() {
+
+    }
+
+    public void edit() {
+
+    }
+
+    public void get() {
+
+    }
+
+    public void loadall() {
+
+    }
+}
+
+class Dbtableguest implements Dbtable {
+    public void add() {
+
+    }
+
+    public void remove() {
+
+    }
+
+    public void edit() {
+
+    }
+
+    public void get() {
+
+    }
+
+    public void loadall() {
+
+    }
+}
+
+class Dbtableroom implements Dbtable {
+    public void add() {
+
+    }
+
+    public void remove() {
+
+    }
+
+    public void edit() {
+
+    }
+
+    public void get() {
+
+    }
+
+    public void loadall() {
+
+    }
 }
 
 public class App {
