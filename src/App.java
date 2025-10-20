@@ -61,9 +61,6 @@ class Room {
         this.pricePerNight = pricePerNight;
     }
 
-    public String DetailstoString() {
-        return "Room{" + roomNumber + ", " + type + ", price=" + pricePerNight + "}";
-    }
 }
 
 class Guest {
@@ -121,9 +118,6 @@ class Guest {
         bookingIds.remove((Integer) bookingId);
     }
 
-    public String DetailstoString() {
-        return "Guest{" + id + ", name='" + name + "'" + ", phone='" + phone + "'" + ", email='" + email + "'" + "}";
-    }
 }
 
 class Booking {
@@ -172,10 +166,6 @@ class Booking {
         return start.isBefore(this.checkOut) && endExclusive.isAfter(this.checkIn);
     }
 
-    public String DetailstoString() {
-        return "Booking{" + id + ", guest=" + guestId + ", room=" + roomNumber + ", " + checkIn + "->" + checkOut + " ("
-                + nights() + " nights)}";
-    }
 }
 
 class HotelManager {
@@ -367,7 +357,6 @@ class MyButton extends JButton {
         this.currentcol = basecol;
         this.setBackground(currentcol);
         this.borderColor = matteBorder.getMatteColor();
-        this.setFocusPainted(false);
         setBorder(new CompoundBorder(matteBorder, paddingBorder));
 
         this.addMouseListener(new MouseAdapter() {
@@ -398,6 +387,174 @@ class MyButton extends JButton {
 
 }
 
+class Contentpanel {
+    Cardpanel panel;
+    Dataloader loader;
+    JButton createButton;
+    JButton deleteButton;
+    JButton editButton;
+    JButton refreshButton;
+    int infopanelcurrent;
+
+    Contentpanel(Cardpanel panel, Dataloader loader) {
+        this.loader = loader;
+        this.panel = panel;
+        configuremainpanel();
+        configureinfopanel();
+        loader.renderall(panel.innerTiles);
+        loader.getinfo(0, panel.infopanel);
+    }
+
+    private void configuremainpanel() {
+        GridBagConstraints con = new GridBagConstraints();
+        Color maincol = new Color(230, 230, 230);
+
+        JPanel additionbuttons = new JPanel(new BorderLayout());
+        additionbuttons.setPreferredSize(new Dimension(0, 60));
+        additionbuttons.setMinimumSize(new Dimension(0, 60));
+        additionbuttons.setMaximumSize(new Dimension(0, 60));
+        additionbuttons.setBackground(maincol);
+        Border lineBorder = new MatteBorder(3, 3, 0, 3, Color.GRAY);
+        Border paddingBorder = new EmptyBorder(10, 10, 10, 10);
+        additionbuttons.setBorder(new CompoundBorder(lineBorder, paddingBorder));
+
+        createButton = new MyButton(new Color(130, 180, 190),
+                new Color(160, 160, 160),
+                Color.blue,
+                new EmptyBorder(10, 10, 10, 10),
+                new MatteBorder(3, 3, 3, 3, Color.GRAY));
+        createButton.setText("Create New");
+        createButton.setIcon(new ImageIcon("icons/list-add.png"));
+        createButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loader.insert();
+                loader.renderall(panel.innerTiles);
+                loader.getinfo(infopanelcurrent, panel.infopanel);
+            }
+        });
+        additionbuttons.add(createButton, BorderLayout.EAST);
+
+        refreshButton = new MyButton(new Color(130, 180, 190),
+                new Color(160, 160, 160),
+                Color.blue,
+                new EmptyBorder(10, 10, 10, 10),
+                new MatteBorder(3, 3, 3, 3, Color.GRAY));
+        refreshButton.setText("Refresh");
+        refreshButton.setIcon(new ImageIcon("icons/view-refresh.png"));
+        refreshButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loader.renderall(panel.innerTiles);
+                loader.getinfo(infopanelcurrent, panel.infopanel);
+            }
+        });
+        additionbuttons.add(refreshButton, BorderLayout.WEST);
+        con.anchor = GridBagConstraints.NORTH;
+        con.fill = GridBagConstraints.HORIZONTAL;
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 0;
+        panel.mainpanel.add(additionbuttons, con);             
+
+        panel.innerTiles = new JPanel();
+        panel.innerTiles.setLayout(new BoxLayout(panel.innerTiles, BoxLayout.Y_AXIS));
+        panel.innerTiles.setBackground(maincol);
+        panel.scrollPanemainpanel = new JScrollPane(panel.innerTiles, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+                panel.scrollPanemainpanel.setBorder(new CompoundBorder(new MatteBorder(0, 3, 3, 3, Color.GRAY), new EmptyBorder(2, 2, 2, 2)));
+        con.anchor = GridBagConstraints.CENTER;
+        con.fill = GridBagConstraints.BOTH;
+        con.gridx = 0;
+        con.gridy = 1;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        panel.mainpanel.add(panel.scrollPanemainpanel, con);
+
+    }
+
+    private void configureinfopanel() {
+        GridBagConstraints con = new GridBagConstraints();
+        Color maincol = new Color(230, 230, 230);
+
+        JPanel controlbuttons = new JPanel(new BorderLayout());
+        controlbuttons.setPreferredSize(new Dimension(0, 60));
+        controlbuttons.setMinimumSize(new Dimension(0, 60));
+        controlbuttons.setMaximumSize(new Dimension(0, 60));
+        controlbuttons.setBackground(maincol);
+        Border lineBorder = new MatteBorder(3, 3, 0, 3, Color.GRAY);
+        Border paddingBorder = new EmptyBorder(10, 10, 10, 10);
+        controlbuttons.setBorder(new CompoundBorder(lineBorder, paddingBorder));
+
+        editButton = new MyButton(new Color(130, 180, 190),
+                new Color(160, 160, 160),
+                Color.blue,
+                new EmptyBorder(10, 10, 10, 10),
+                new MatteBorder(3, 3, 3, 3, Color.GRAY));
+        editButton.setText("Edit");
+        editButton.setIcon(new ImageIcon("icons/document-edit.png"));
+        editButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loader.edit(infopanelcurrent);
+                loader.renderall(panel.innerTiles);
+                loader.getinfo(infopanelcurrent, panel.infopanel);
+            }
+        });
+        controlbuttons.add(editButton, BorderLayout.EAST);
+
+        deleteButton = new MyButton(new Color(130, 180, 190),
+                new Color(160, 160, 160),
+                Color.blue,
+                new EmptyBorder(10, 10, 10, 10),
+                new MatteBorder(3, 3, 3, 3, Color.GRAY));
+        deleteButton.setText("Delete");
+        deleteButton.setIcon(new ImageIcon("icons/edit-delete.png"));
+        deleteButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loader.remove(infopanelcurrent);
+                loader.renderall(panel.innerTiles);
+                loader.getinfo(infopanelcurrent, panel.infopanel);
+            }
+        });
+        controlbuttons.add(deleteButton, BorderLayout.WEST);
+        con.anchor = GridBagConstraints.NORTH;
+        con.fill = GridBagConstraints.HORIZONTAL;
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 0;
+        panel.psideinfo.add(controlbuttons, con);
+
+        panel.infopanel = new JPanel();
+        panel.infopanel.setLayout(new BoxLayout(panel.infopanel, BoxLayout.Y_AXIS));
+        panel.scrollPaneinfopanel = new JScrollPane(panel.infopanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        panel.infopanel.setBackground(maincol);
+        panel.scrollPaneinfopanel
+                .setBorder(new CompoundBorder(new MatteBorder(0, 3, 3, 3, Color.GRAY), new EmptyBorder(2, 2, 2, 2)));
+
+        con.anchor = GridBagConstraints.CENTER;
+        con.fill = GridBagConstraints.BOTH;
+        con.gridx = 0;
+        con.gridy = 1;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        panel.psideinfo.add(panel.scrollPaneinfopanel, con);
+    }
+}
+
 class Cardpanel {
     JPanel main;
     JPanel sidebar;
@@ -405,6 +562,8 @@ class Cardpanel {
     JPanel psidenav;
     JPanel psideinfo;
     JScrollPane scrollPanemainpanel;
+    JScrollPane scrollPaneinfopanel;
+    JPanel infopanel;
     JPanel innerTiles;
 
     Cardpanel(int pan, ActionListener navlist) {
@@ -427,13 +586,11 @@ class Cardpanel {
         con.gridx = 1;
         con.gridy = 0;
         con.gridheight = 1;
-        con.gridwidth = 3;
+        con.gridwidth = 1;
         con.weightx = 3.0;
         con.weighty = 1.0;
-        configuremainpanel();
         mainpanel.setOpaque(true);
         main.add(mainpanel, con);
-
     }
 
     void createsidepanel(int pan, ActionListener navlist) {
@@ -521,7 +678,6 @@ class Cardpanel {
         JPanel controlsPanel = new JPanel(new GridBagLayout());
         controlsPanel.setBackground(Color.LIGHT_GRAY);
 
-        // Set the border
         Border lineBorder = new MatteBorder(3, 3, 3, 3, Color.GRAY);
         Border paddingBorder = new EmptyBorder(10, 10, 10, 10);
         controlsPanel.setBorder(new CompoundBorder(lineBorder, paddingBorder));
@@ -529,52 +685,69 @@ class Cardpanel {
         return controlsPanel;
     }
 
-    private void configuremainpanel() {
-        GridBagConstraints con = new GridBagConstraints();
-        Color maincol = new Color(230, 230, 230);
-        con.fill = GridBagConstraints.BOTH;
-        JPanel additionbuttons = new JPanel(new BorderLayout());
-        con.gridx = 0;
-        con.gridy = 0;
-        con.gridwidth = 1;
-        con.gridheight = 1;
-        con.weightx = 1;
-        con.weighty = 0;
-        con.fill = GridBagConstraints.HORIZONTAL;
-        additionbuttons.setPreferredSize(new Dimension(0, 50));
-        additionbuttons.setBackground(maincol);
-        Border lineBorder = new MatteBorder(3, 3, 0, 3, Color.GRAY);
-        Border paddingBorder = new EmptyBorder(10, 10, 10, 10);
-        additionbuttons.setBorder(new CompoundBorder(lineBorder, paddingBorder));
+}
 
-        JButton button = new MyButton(new Color(130, 180, 190),
-                new Color(160, 160, 160),
-                Color.blue,
-                new EmptyBorder(10, 10, 10, 10),
-                new MatteBorder(3, 3, 3, 3, Color.GRAY));
-        button.setText("Create New");
-        button.setIcon(new ImageIcon("icons/list-add.png"));
-        additionbuttons.add(button, BorderLayout.EAST);
-        mainpanel.add(additionbuttons, con);
+interface Dataloader {
+    void insert();
 
-        innerTiles = new JPanel(new GridBagLayout());
-        scrollPanemainpanel = new JScrollPane(innerTiles, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        con.gridx = 0;
-        con.gridy = 1;
-        con.gridwidth = 1;
-        con.gridheight = 1;
-        con.weightx = 1;
-        con.weighty = 1;
-        con.fill = GridBagConstraints.BOTH;
-        innerTiles.setBackground(maincol);
-        scrollPanemainpanel
-                .setBorder(new CompoundBorder(new MatteBorder(0, 3, 3, 3, Color.GRAY), new EmptyBorder(2, 2, 2, 2)));
-        mainpanel.add(scrollPanemainpanel, con);
+    void remove(int item);
+
+    void edit(int item);
+
+    void getinfo(int item, JPanel panel);
+
+    void renderall(JPanel panel);
+}
+
+class Roompanel implements Dataloader {
+    public void insert() {
+
     }
 
-    private void configureinfopanel() {
+    public void remove(int item) {
+    }
 
+    public void edit(int item) {
+    }
+
+    public void getinfo(int item, JPanel panel) {
+    }
+
+    public void renderall(JPanel panel) {
+    }
+}
+
+class Guestpanel implements Dataloader {
+    public void insert() {
+    }
+
+    public void remove(int item) {
+    }
+
+    public void edit(int item) {
+    }
+
+    public void getinfo(int item, JPanel panel) {
+    }
+
+    public void renderall(JPanel panel) {
+    }
+}
+
+class Bookingpanel implements Dataloader {
+    public void insert() {
+    }
+
+    public void remove(int item) {
+    }
+
+    public void edit(int item) {
+    }
+
+    public void getinfo(int item, JPanel panel) {
+    }
+
+    public void renderall(JPanel panel) {
     }
 }
 
@@ -607,6 +780,9 @@ class AppUI {
     Cardpanel guestmgmt;
     Cardpanel bookingmgmt;
 
+    Contentpanel room;
+    Contentpanel guest;
+    Contentpanel booking;
     CardLayout cardlayout;
     Connection conn;
 
@@ -623,10 +799,13 @@ class AppUI {
         home = new Cardpanel(0, navlist);
         frame.add(home.main, "Home");
         roommgmt = new Cardpanel(1, navlist);
+        room = new Contentpanel(roommgmt, new Roompanel());
         frame.add(roommgmt.main, "room");
         guestmgmt = new Cardpanel(2, navlist);
+        guest = new Contentpanel(guestmgmt, new Guestpanel());
         frame.add(guestmgmt.main, "guest");
         bookingmgmt = new Cardpanel(3, navlist);
+        booking = new Contentpanel(bookingmgmt, new Bookingpanel());
         frame.add(bookingmgmt.main, "booking");
 
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -757,7 +936,7 @@ class Database {
                         "DataBase Connected Sucessfully",
                         "Database Connection Status",
                         JOptionPane.INFORMATION_MESSAGE);
-                checktables(dialog);
+                inittables(dialog);
                 frame.setVisible(true);
                 dialog.dispose();
             }
@@ -773,7 +952,7 @@ class Database {
         dialog.setVisible(true);
     }
 
-    static void checktables(JFrame dialog) {
+    static void inittables(JFrame dialog) {
         try {
             Statement stmt = dbconn.createStatement();
             String[] tables = {
@@ -791,85 +970,7 @@ class Database {
                     JOptionPane.ERROR_MESSAGE);
         }
     }
-}
 
-interface Dbtable {
-    void add();
-
-    void remove();
-
-    void edit();
-
-    void get();
-
-    void loadall();
-
-}
-
-class Dbtablebooking implements Dbtable {
-    public void add() {
-
-    }
-
-    public void remove() {
-
-    }
-
-    public void edit() {
-
-    }
-
-    public void get() {
-
-    }
-
-    public void loadall() {
-
-    }
-}
-
-class Dbtableguest implements Dbtable {
-    public void add() {
-
-    }
-
-    public void remove() {
-
-    }
-
-    public void edit() {
-
-    }
-
-    public void get() {
-
-    }
-
-    public void loadall() {
-
-    }
-}
-
-class Dbtableroom implements Dbtable {
-    public void add() {
-
-    }
-
-    public void remove() {
-
-    }
-
-    public void edit() {
-
-    }
-
-    public void get() {
-
-    }
-
-    public void loadall() {
-
-    }
 }
 
 public class App {
