@@ -1,4 +1,3 @@
-import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -216,7 +215,6 @@ class HotelManager {
         r.setPricePerNight(newPrice);
     }
 
-    // TODO REMOVE METHOD
     public void updateRoomType(int roomNumber, ROOM_TYPE newType) {
         Room r = requireRoom(roomNumber);
         r.setType(newType);
@@ -702,9 +700,29 @@ interface Dataloader {
 
 class Roompanel implements Dataloader {
     JFrame frame;
+    PreparedStatement insertentry;
+    PreparedStatement getentry;
+    PreparedStatement editentry;
+    PreparedStatement delete_entry;
+    PreparedStatement getallentry;
+    PreparedStatement getrelatedbookings;
 
     Roompanel(JFrame frame) {
         this.frame = frame;
+        try {
+            insertentry = Database.dbconn.prepareStatement("INSERT INTO room VALUES (?,?,?);");
+            getentry = Database.dbconn.prepareStatement("SELECT * FROM room  WHERE roomid = ?;");
+            editentry = Database.dbconn.prepareStatement("UPDATE room SET roomtype = ?, price = ? WHERE roomid = ?;");
+            delete_entry = Database.dbconn.prepareStatement("DELETE FROM room WHERE roomid = ?;");
+            getallentry = Database.dbconn.prepareStatement("SELECT * FROM room;");
+            getrelatedbookings = Database.dbconn.prepareStatement(
+                    "SELECT booking.* FROM room INNER JOIN booking ON room.roomid = booking.roomid WHERE room.roomid = ?;");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public void insert() {
@@ -715,7 +733,8 @@ class Roompanel implements Dataloader {
     }
 
     public int remove(int item) {
-        JOptionPane.showConfirmDialog(frame, "are you sure you want to delete this Room", "confirm deletion",
+        JOptionPane.showConfirmDialog(frame, "Are you sure you want to Delete Room Number '" + item + "'",
+                "Confirm Deletion",
                 JOptionPane.YES_NO_OPTION);
         return 0;
     }
@@ -738,9 +757,29 @@ class Roompanel implements Dataloader {
 
 class Guestpanel implements Dataloader {
     JFrame frame;
+    PreparedStatement insertentry;
+    PreparedStatement getentry;
+    PreparedStatement editentry;
+    PreparedStatement delete_entry;
+    PreparedStatement getallentry;
+    PreparedStatement getrelatedbookings;
 
     Guestpanel(JFrame frame) {
         this.frame = frame;
+        try {
+            insertentry = Database.dbconn.prepareStatement("INSERT INTO guest VALUES (?,?,?,?);");
+            getentry = Database.dbconn.prepareStatement("SELECT * FROM guest  WHERE guestid = ?;");
+            editentry = Database.dbconn.prepareStatement("UPDATE guest SET name = ?,phone = ?, email = ? WHERE guestid = ?;");
+            delete_entry = Database.dbconn.prepareStatement("DELETE FROM guest WHERE guestid = ?;");
+            getallentry = Database.dbconn.prepareStatement("SELECT * FROM guest;");
+            getrelatedbookings = Database.dbconn.prepareStatement(
+                    "SELECT booking.* FROM guest INNER JOIN booking ON guest.guestid = booking.guestid WHERE guest.guestid = ?;");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public void insert() {
@@ -751,7 +790,8 @@ class Guestpanel implements Dataloader {
     }
 
     public int remove(int item) {
-        JOptionPane.showConfirmDialog(frame, "are you sure you want to delete this Guest", "confirm deletion",
+        JOptionPane.showConfirmDialog(frame, "Are you sure you want to Delete Guest Number '" + item + "'",
+                "Confirm Deletion",
                 JOptionPane.YES_NO_OPTION);
         return 0;
     }
@@ -772,9 +812,26 @@ class Guestpanel implements Dataloader {
 
 class Bookingpanel implements Dataloader {
     JFrame frame;
+    PreparedStatement insertentry;
+    PreparedStatement getentry;
+    PreparedStatement editentry;
+    PreparedStatement delete_entry;
+    PreparedStatement getallentry;
 
     Bookingpanel(JFrame frame) {
         this.frame = frame;
+        try {
+            insertentry = Database.dbconn.prepareStatement("INSERT INTO booking VALUES (?,?,?,?,?);");
+            getentry = Database.dbconn.prepareStatement("SELECT * FROM booking  WHERE bookingid = ?;");
+            editentry = Database.dbconn.prepareStatement("UPDATE booking SET checkin = ?, checkout = ?, roomid = ?, guestid = ? WHERE bookingid = ?;");
+            delete_entry = Database.dbconn.prepareStatement("DELETE FROM booking WHERE bookingid = ?;");
+            getallentry = Database.dbconn.prepareStatement("SELECT * FROM booking;");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public void insert() {
@@ -785,7 +842,8 @@ class Bookingpanel implements Dataloader {
     }
 
     public int remove(int item) {
-        JOptionPane.showConfirmDialog(frame, "are you sure you want to delete this booking", "confirm deletion",
+        JOptionPane.showConfirmDialog(frame, "Are you sure you want to Delete Booking Number '" + item + "'",
+                "Confirm Deletion",
                 JOptionPane.YES_NO_OPTION);
         return 0;
     }
