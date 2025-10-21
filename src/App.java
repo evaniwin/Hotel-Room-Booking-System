@@ -4,6 +4,9 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.*;
 import javax.swing.border.*;
+
+import com.mysql.cj.xdevapi.Result;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
@@ -19,6 +22,19 @@ enum ROOM_TYPE {
                 return ROOM_TYPE.DOUBLE;
             case 3:
                 return ROOM_TYPE.DELUXE;
+            default:
+                throw new IllegalArgumentException("Given Value must be between 1 and 3");
+        }
+    }
+
+    public static String strfromint(int val) {
+        switch (val) {
+            case 1:
+                return "Single";
+            case 2:
+                return "Double";
+            case 3:
+                return "Deluxe";
             default:
                 throw new IllegalArgumentException("Given Value must be between 1 and 3");
         }
@@ -400,7 +416,7 @@ class Contentpanel {
         configuremainpanel();
         configureinfopanel();
         loader.renderall(panel.innerTiles);
-        loader.getinfo(0, panel.infopanel);
+        loader.getinfo(1, panel.infopanel);
     }
 
     private void configuremainpanel() {
@@ -459,7 +475,7 @@ class Contentpanel {
         panel.mainpanel.add(additionbuttons, con);
 
         panel.innerTiles = new JPanel();
-        panel.innerTiles.setLayout(new BoxLayout(panel.innerTiles, BoxLayout.Y_AXIS));
+        panel.innerTiles.setLayout(new GridBagLayout());
         panel.innerTiles.setBackground(maincol);
         panel.scrollPanemainpanel = new JScrollPane(panel.innerTiles, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -506,6 +522,9 @@ class Contentpanel {
             }
         });
         controlbuttons.add(editButton, BorderLayout.EAST);
+        JLabel lab1 = new JLabel("Details");
+        lab1.setHorizontalAlignment(SwingConstants.CENTER);
+        controlbuttons.add(lab1, BorderLayout.CENTER);
 
         deleteButton = new MyButton(new Color(130, 180, 190),
                 new Color(160, 160, 160),
@@ -534,7 +553,7 @@ class Contentpanel {
         panel.psideinfo.add(controlbuttons, con);
 
         panel.infopanel = new JPanel();
-        panel.infopanel.setLayout(new BoxLayout(panel.infopanel, BoxLayout.Y_AXIS));
+        panel.infopanel.setLayout(new GridBagLayout());
         panel.scrollPaneinfopanel = new JScrollPane(panel.infopanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
@@ -710,7 +729,7 @@ class Roompanel implements Dataloader {
     Roompanel(JFrame frame) {
         this.frame = frame;
         try {
-            insertentry = Database.dbconn.prepareStatement("INSERT INTO room VALUES (?,?,?);");
+            insertentry = Database.dbconn.prepareStatement("INSERT INTO room (room_type,price) VALUES (?,?);");
             getentry = Database.dbconn.prepareStatement("SELECT * FROM room  WHERE roomid = ?;");
             editentry = Database.dbconn.prepareStatement("UPDATE room SET roomtype = ?, price = ? WHERE roomid = ?;");
             delete_entry = Database.dbconn.prepareStatement("DELETE FROM room WHERE roomid = ?;");
@@ -727,12 +746,106 @@ class Roompanel implements Dataloader {
 
     public void insert() {
         JDialog dialog = new JDialog(frame, "Create New Room");
-        dialog.setSize(500, 300);
+        dialog.setSize(500, 200);
+        dialog.setResizable(false);
+        dialog.setLayout(new GridBagLayout());
+        GridBagConstraints con = new GridBagConstraints();
+        con.anchor = GridBagConstraints.CENTER;
+        con.fill = GridBagConstraints.BOTH;
 
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        JLabel lab1 = new JLabel("      Room Type: ");
+        dialog.add(lab1, con);
+
+        JRadioButton rd1 = new JRadioButton("Single", true);
+        rd1.setActionCommand("1");
+        JRadioButton rd2 = new JRadioButton("Double", false);
+        rd2.setActionCommand("2");
+        JRadioButton rd3 = new JRadioButton("Deluxe", false);
+        rd3.setActionCommand("3");
+        ButtonGroup bgr = new ButtonGroup();
+        con.gridx = 1;
+        bgr.add(rd1);
+        dialog.add(rd1, con);
+        con.gridy = 1;
+        bgr.add(rd2);
+        dialog.add(rd2, con);
+        con.gridy = 2;
+        bgr.add(rd3);
+        dialog.add(rd3, con);
+
+        con.gridx = 0;
+        con.gridy = 3;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        JLabel lab2 = new JLabel("      Room Price per Night: ");
+        lab2.setBorder(new CompoundBorder(new MatteBorder(3, 0, 3, 0, Color.GRAY), new EmptyBorder(5, 0, 5, 0)));
+        dialog.add(lab2, con);
+
+        con.gridx = 1;
+        con.gridy = 3;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        JSpinner spi = new JSpinner(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 100));
+        dialog.add(spi, con);
+        spi.setBorder(new CompoundBorder(new MatteBorder(3, 0, 3, 0, Color.GRAY), new EmptyBorder(5, 0, 5, 0)));
+        con.gridy = 4;
+        JButton btn = new MyButton(new Color(130, 180, 190),
+                new Color(160, 160, 160),
+                Color.blue,
+                new EmptyBorder(5, 5, 5, 5),
+                new MatteBorder(3, 3, 3, 3, Color.GRAY));
+        btn.setText("Create");
+        btn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int roomtype = Integer.parseInt(bgr.getSelection().getActionCommand());
+                int price = (int) spi.getValue();
+                try {
+                    insertentry.setInt(1, roomtype);
+                    insertentry.setInt(2, price);
+                    insertentry.execute();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame,
+                            ex,
+                            "Database Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    dialog.dispose();
+                }
+            }
+        });
+        dialog.add(btn, con);
         dialog.setVisible(true);
+
     }
 
     public int remove(int item) {
+        try {
+            getentry.setInt(1, item);
+            ResultSet rslt = getentry.executeQuery();
+            if (!rslt.next()) {
+                JOptionPane.showMessageDialog(frame,
+                        "Room" + item + " does not exist",
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return item;
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return item;
+        }
         JOptionPane.showConfirmDialog(frame, "Are you sure you want to Delete Room Number '" + item + "'",
                 "Confirm Deletion",
                 JOptionPane.YES_NO_OPTION);
@@ -740,18 +853,197 @@ class Roompanel implements Dataloader {
     }
 
     public void edit(int item) {
-        JDialog dialog = new JDialog(frame, "Edit Room");
-        dialog.setSize(500, 300);
 
+        int roomtype;
+        int price;
+        try {
+            getentry.setInt(1, item);
+            ResultSet rslt = getentry.executeQuery();
+            if (!rslt.next()) {
+                JOptionPane.showMessageDialog(frame,
+                        "Room" + item + " does not exist",
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            roomtype = rslt.getInt("room_type");
+            price = rslt.getInt("price");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        JDialog dialog = new JDialog(frame, "Edit Room");
+        dialog.setSize(500, 200);
+        dialog.setResizable(false);
+        dialog.setLayout(new GridBagLayout());
+        GridBagConstraints con = new GridBagConstraints();
+        con.anchor = GridBagConstraints.CENTER;
+        con.fill = GridBagConstraints.BOTH;
+
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        JLabel lab1 = new JLabel("      Room Type: ");
+        dialog.add(lab1, con);
+
+        JRadioButton rd1 = new JRadioButton("Single", roomtype == 1);
+        rd1.setActionCommand("1");
+        JRadioButton rd2 = new JRadioButton("Double", roomtype == 2);
+        rd2.setActionCommand("2");
+        JRadioButton rd3 = new JRadioButton("Deluxe", roomtype == 3);
+        rd3.setActionCommand("3");
+        ButtonGroup bgr = new ButtonGroup();
+        con.gridx = 1;
+        bgr.add(rd1);
+        dialog.add(rd1, con);
+        con.gridy = 1;
+        bgr.add(rd2);
+        dialog.add(rd2, con);
+        con.gridy = 2;
+        bgr.add(rd3);
+        dialog.add(rd3, con);
+
+        con.gridx = 0;
+        con.gridy = 3;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        JLabel lab2 = new JLabel("      Room Price per Night: ");
+        lab2.setBorder(new CompoundBorder(new MatteBorder(3, 0, 3, 0, Color.GRAY), new EmptyBorder(5, 0, 5, 0)));
+        dialog.add(lab2, con);
+
+        con.gridx = 1;
+        con.gridy = 3;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        JSpinner spi = new JSpinner(new SpinnerNumberModel(price, 0, Integer.MAX_VALUE, 100));
+        dialog.add(spi, con);
+        spi.setBorder(new CompoundBorder(new MatteBorder(3, 0, 3, 0, Color.GRAY), new EmptyBorder(5, 0, 5, 0)));
+        con.gridy = 4;
+        JButton btn = new MyButton(new Color(130, 180, 190),
+                new Color(160, 160, 160),
+                Color.blue,
+                new EmptyBorder(5, 5, 5, 5),
+                new MatteBorder(3, 3, 3, 3, Color.GRAY));
+        btn.setText("Create");
+        btn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int roomtype = Integer.parseInt(bgr.getSelection().getActionCommand());
+                int price = (int) spi.getValue();
+                try {
+                    editentry.setInt(1, roomtype);
+                    editentry.setInt(2, price);
+                    editentry.setInt(3, item);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame,
+                            ex,
+                            "Database Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    dialog.dispose();
+                }
+            }
+        });
+        dialog.add(btn, con);
         dialog.setVisible(true);
     }
 
     public void getinfo(int item, JPanel panel) {
 
+        int roomtype;
+        int price;
+        try {
+            getentry.setInt(1, item);
+            ResultSet rslt = getentry.executeQuery();
+            if (!rslt.next()) {
+                JOptionPane.showMessageDialog(frame,
+                        "Room" + item + " does not exist",
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            roomtype = rslt.getInt("room_type");
+            price = rslt.getInt("price");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        JLabel lab1 = new JLabel("Room Number :");
+        JLabel lab2 = new JLabel("Room Type :");
+        JLabel lab3 = new JLabel("Price Per Night :");
+        JTextField fl1 = new JTextField(String.valueOf(item));
+        fl1.setEditable(false);
+        JTextField fl2 = new JTextField(ROOM_TYPE.strfromint(roomtype));
+        fl2.setEditable(false);
+        JTextField fl3 = new JTextField(String.valueOf(price));
+        fl3.setEditable(false);
+
+        panel.removeAll();
+
+        GridBagConstraints con = new GridBagConstraints();
+        con.anchor = GridBagConstraints.CENTER;
+        con.fill = GridBagConstraints.HORIZONTAL;
+        con.insets = new Insets(5, 5, 5, 5);
+
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        panel.add(lab1, con);
+        con.gridy = 1;
+        panel.add(lab2, con);
+        con.gridy = 2;
+        panel.add(lab3, con);
+
+        con.gridx = 1;
+        con.gridy = 0;
+        panel.add(fl1, con);
+        con.gridy = 1;
+        panel.add(fl2, con);
+        con.gridy = 2;
+        panel.add(fl3, con);
+
+        con.gridx = 0;
+        con.gridy = 3;
+        con.fill = GridBagConstraints.BOTH;
+        con.gridwidth = 2;
+        con.weighty = 1000;
+        panel.add(new JPanel(), con);
     }
 
     public void renderall(JPanel panel) {
+        int roomid;
+        int roomtype;
+        int price;
+        try {
+            ResultSet rslt = getallentry.executeQuery();
+            while (rslt.next()) {
+                roomid = rslt.getInt("roomid");
+                roomtype = rslt.getInt("room_type");
+                price = rslt.getInt("price");
 
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
     }
 }
 
@@ -767,9 +1059,10 @@ class Guestpanel implements Dataloader {
     Guestpanel(JFrame frame) {
         this.frame = frame;
         try {
-            insertentry = Database.dbconn.prepareStatement("INSERT INTO guest VALUES (?,?,?,?);");
+            insertentry = Database.dbconn.prepareStatement("INSERT INTO guest (name,phone,email) VALUES (?,?,?);");
             getentry = Database.dbconn.prepareStatement("SELECT * FROM guest  WHERE guestid = ?;");
-            editentry = Database.dbconn.prepareStatement("UPDATE guest SET name = ?,phone = ?, email = ? WHERE guestid = ?;");
+            editentry = Database.dbconn
+                    .prepareStatement("UPDATE guest SET name = ?,phone = ?, email = ? WHERE guestid = ?;");
             delete_entry = Database.dbconn.prepareStatement("DELETE FROM guest WHERE guestid = ?;");
             getallentry = Database.dbconn.prepareStatement("SELECT * FROM guest;");
             getrelatedbookings = Database.dbconn.prepareStatement(
@@ -821,9 +1114,11 @@ class Bookingpanel implements Dataloader {
     Bookingpanel(JFrame frame) {
         this.frame = frame;
         try {
-            insertentry = Database.dbconn.prepareStatement("INSERT INTO booking VALUES (?,?,?,?,?);");
+            insertentry = Database.dbconn
+                    .prepareStatement("INSERT INTO booking (checkin,checkout,roomid,guestid) VALUES (?,?,?,?);");
             getentry = Database.dbconn.prepareStatement("SELECT * FROM booking  WHERE bookingid = ?;");
-            editentry = Database.dbconn.prepareStatement("UPDATE booking SET checkin = ?, checkout = ?, roomid = ?, guestid = ? WHERE bookingid = ?;");
+            editentry = Database.dbconn.prepareStatement(
+                    "UPDATE booking SET checkin = ?, checkout = ?, roomid = ?, guestid = ? WHERE bookingid = ?;");
             delete_entry = Database.dbconn.prepareStatement("DELETE FROM booking WHERE bookingid = ?;");
             getallentry = Database.dbconn.prepareStatement("SELECT * FROM booking;");
         } catch (Exception ex) {
