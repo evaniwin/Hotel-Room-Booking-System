@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.*;
 import javax.swing.border.*;
 
-import com.mysql.cj.xdevapi.Result;
+import com.mysql.cj.protocol.Resultset;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -725,6 +725,7 @@ class Roompanel implements Dataloader {
     PreparedStatement delete_entry;
     PreparedStatement getallentry;
     PreparedStatement getrelatedbookings;
+    PreparedStatement findnearestid;
 
     Roompanel(JFrame frame) {
         this.frame = frame;
@@ -736,6 +737,8 @@ class Roompanel implements Dataloader {
             getallentry = Database.dbconn.prepareStatement("SELECT * FROM room;");
             getrelatedbookings = Database.dbconn.prepareStatement(
                     "SELECT booking.* FROM room INNER JOIN booking ON room.roomid = booking.roomid WHERE room.roomid = ?;");
+            findnearestid = Database.dbconn
+                    .prepareStatement("SELECT * FROM room ORDER BY ABS(room.roomid - ?) LIMIT 1;");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(frame,
                     ex,
@@ -834,11 +837,25 @@ class Roompanel implements Dataloader {
             ResultSet rslt = getentry.executeQuery();
             if (!rslt.next()) {
                 JOptionPane.showMessageDialog(frame,
-                        "Room" + item + " does not exist",
+                        "Room " + item + " does not exist",
                         "Database Error",
                         JOptionPane.ERROR_MESSAGE);
                 return item;
             }
+            int choice = JOptionPane.showConfirmDialog(frame,
+                    "Are you sure you want to Delete Room Number '" + item + "'",
+                    "Confirm Deletion",
+                    JOptionPane.YES_NO_OPTION);
+            if (choice == JOptionPane.YES_OPTION) {
+                delete_entry.setInt(1, item);
+                delete_entry.execute();
+                findnearestid.setInt(1, item);
+                ResultSet rs = findnearestid.executeQuery();
+                rs.next();
+                return rs.getInt("roomid");
+
+            }
+            return item;
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(frame,
                     ex,
@@ -846,10 +863,7 @@ class Roompanel implements Dataloader {
                     JOptionPane.ERROR_MESSAGE);
             return item;
         }
-        JOptionPane.showConfirmDialog(frame, "Are you sure you want to Delete Room Number '" + item + "'",
-                "Confirm Deletion",
-                JOptionPane.YES_NO_OPTION);
-        return 0;
+
     }
 
     public void edit(int item) {
@@ -1025,6 +1039,7 @@ class Roompanel implements Dataloader {
         panel.add(new JPanel(), con);
     }
 
+    // Todo
     public void renderall(JPanel panel) {
         int roomid;
         int roomtype;
@@ -1055,18 +1070,21 @@ class Guestpanel implements Dataloader {
     PreparedStatement delete_entry;
     PreparedStatement getallentry;
     PreparedStatement getrelatedbookings;
+    PreparedStatement findnearestid;
 
     Guestpanel(JFrame frame) {
         this.frame = frame;
         try {
             insertentry = Database.dbconn.prepareStatement("INSERT INTO guest (name,phone,email) VALUES (?,?,?);");
-            getentry = Database.dbconn.prepareStatement("SELECT * FROM guest  WHERE guestid = ?;");
+            getentry = Database.dbconn.prepareStatement("SELECT * FROM guest WHERE guestid = ?;");
             editentry = Database.dbconn
                     .prepareStatement("UPDATE guest SET name = ?,phone = ?, email = ? WHERE guestid = ?;");
             delete_entry = Database.dbconn.prepareStatement("DELETE FROM guest WHERE guestid = ?;");
             getallentry = Database.dbconn.prepareStatement("SELECT * FROM guest;");
             getrelatedbookings = Database.dbconn.prepareStatement(
                     "SELECT booking.* FROM guest INNER JOIN booking ON guest.guestid = booking.guestid WHERE guest.guestid = ?;");
+            findnearestid = Database.dbconn
+                    .prepareStatement("SELECT * FROM guest ORDER BY ABS(guest.guestid - ?) LIMIT 1;");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(frame,
                     ex,
@@ -1076,27 +1094,293 @@ class Guestpanel implements Dataloader {
     }
 
     public void insert() {
-        JDialog dialog = new JDialog(frame, "Create New Guest");
-        dialog.setSize(500, 300);
 
+        JDialog dialog = new JDialog(frame, "Create New Room");
+        dialog.setSize(500, 200);
+        dialog.setResizable(false);
+        dialog.setLayout(new GridBagLayout());
+        GridBagConstraints con = new GridBagConstraints();
+        con.anchor = GridBagConstraints.CENTER;
+        con.fill = GridBagConstraints.HORIZONTAL;
+
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+
+        JLabel lab1 = new JLabel("      Guest Name: ");
+        JLabel lab2 = new JLabel("      Guest Phone Number:  ");
+        JLabel lab3 = new JLabel("      Guest Email: ");
+
+        con.gridy = 0;
+        dialog.add(lab1, con);
+        con.gridy = 1;
+        dialog.add(lab2, con);
+        con.gridy = 2;
+        dialog.add(lab3, con);
+
+        JTextField tf1 = new JTextField(30);
+        JTextField tf2 = new JTextField(30);
+        JTextField tf3 = new JTextField(30);
+
+        con.gridx = 1;
+        con.gridy = 0;
+        dialog.add(tf1, con);
+        con.gridy = 1;
+        dialog.add(tf2, con);
+        con.gridy = 2;
+        dialog.add(tf3, con);
+
+        JButton btn = new MyButton(new Color(130, 180, 190),
+                new Color(160, 160, 160),
+                Color.blue,
+                new EmptyBorder(5, 5, 5, 5),
+                new MatteBorder(3, 3, 3, 3, Color.GRAY));
+        btn.setText("Create");
+        btn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+                try {
+                    insertentry.setString(1, tf1.getText());
+                    insertentry.setString(2, tf2.getText());
+                    insertentry.setString(3, tf3.getText());
+                    insertentry.execute();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame,
+                            ex,
+                            "Database Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    dialog.dispose();
+                }
+            }
+        });
+        con.gridx = 1;
+        con.gridy = 3;
+        dialog.add(btn, con);
+        con.gridy = 0;
+        con.gridx = 2;
+        JPanel pan = new JPanel();
+        Dimension dim = new Dimension(8, 8);
+        pan.setMinimumSize(dim);
+        pan.setMaximumSize(dim);
+        pan.setPreferredSize(dim);
+        dialog.add(pan, con);
         dialog.setVisible(true);
     }
 
     public int remove(int item) {
-        JOptionPane.showConfirmDialog(frame, "Are you sure you want to Delete Guest Number '" + item + "'",
-                "Confirm Deletion",
-                JOptionPane.YES_NO_OPTION);
-        return 0;
+        try {
+            getentry.setInt(1, item);
+            ResultSet rslt = getentry.executeQuery();
+            if (!rslt.next()) {
+                JOptionPane.showMessageDialog(frame,
+                        "Guest " + item + " does not exist",
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return item;
+            }
+            int choice = JOptionPane.showConfirmDialog(frame,
+                    "Are you sure you want to Delete Guest Number '" + item + "'",
+                    "Confirm Deletion",
+                    JOptionPane.YES_NO_OPTION);
+            if (choice == JOptionPane.YES_OPTION) {
+                delete_entry.setInt(1, item);
+                delete_entry.execute();
+                findnearestid.setInt(1, item);
+                ResultSet rs = findnearestid.executeQuery();
+                rs.next();
+                return rs.getInt("roomid");
+
+            }
+            return item;
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return item;
+        }
     }
 
     public void edit(int item) {
-        JDialog dialog = new JDialog(frame, "Edit Guest Details");
-        dialog.setSize(500, 300);
+        String guestname;
+        String guestphone;
+        String guestemail;
+        try {
+            getentry.setInt(1, item);
+            ResultSet rslt = getentry.executeQuery();
+            if (!rslt.next()) {
+                JOptionPane.showMessageDialog(frame,
+                        "Guest Number" + item + " does not exist",
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            guestname = rslt.getString("name");
+            guestphone = rslt.getString("phone");
+            guestemail = rslt.getString("email");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        JDialog dialog = new JDialog(frame, "Create New Room");
+        dialog.setSize(500, 200);
+        dialog.setResizable(false);
+        dialog.setLayout(new GridBagLayout());
+        GridBagConstraints con = new GridBagConstraints();
+        con.anchor = GridBagConstraints.CENTER;
+        con.fill = GridBagConstraints.HORIZONTAL;
 
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+
+        JLabel lab1 = new JLabel("      Guest Name: ");
+        JLabel lab2 = new JLabel("      Guest Phone Number:  ");
+        JLabel lab3 = new JLabel("      Guest Email: ");
+
+        con.gridy = 0;
+        dialog.add(lab1, con);
+        con.gridy = 1;
+        dialog.add(lab2, con);
+        con.gridy = 2;
+        dialog.add(lab3, con);
+
+        JTextField tf1 = new JTextField(guestname, 30);
+        JTextField tf2 = new JTextField(guestphone, 30);
+        JTextField tf3 = new JTextField(guestemail, 30);
+
+        con.gridx = 1;
+        con.gridy = 0;
+        dialog.add(tf1, con);
+        con.gridy = 1;
+        dialog.add(tf2, con);
+        con.gridy = 2;
+        dialog.add(tf3, con);
+
+        JButton btn = new MyButton(new Color(130, 180, 190),
+                new Color(160, 160, 160),
+                Color.blue,
+                new EmptyBorder(5, 5, 5, 5),
+                new MatteBorder(3, 3, 3, 3, Color.GRAY));
+        btn.setText("Create");
+        btn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+                try {
+                    editentry.setString(1, tf1.getText());
+                    editentry.setString(2, tf2.getText());
+                    editentry.setString(3, tf3.getText());
+                    editentry.setInt(4, item);
+                    insertentry.execute();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame,
+                            ex,
+                            "Database Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    dialog.dispose();
+                }
+            }
+        });
+        con.gridx = 1;
+        con.gridy = 3;
+        dialog.add(btn, con);
+        con.gridy = 0;
+        con.gridx = 2;
+        JPanel pan = new JPanel();
+        Dimension dim = new Dimension(8, 8);
+        pan.setMinimumSize(dim);
+        pan.setMaximumSize(dim);
+        pan.setPreferredSize(dim);
+        dialog.add(pan, con);
         dialog.setVisible(true);
     }
 
     public void getinfo(int item, JPanel panel) {
+        String name;
+        String phone;
+        String email;
+        try {
+            getentry.setInt(1, item);
+            ResultSet rslt = getentry.executeQuery();
+            if (!rslt.next()) {
+                JOptionPane.showMessageDialog(frame,
+                        "Guest Number" + item + " does not exist",
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            name = rslt.getString("name");
+            phone = rslt.getString("phone");
+            email = rslt.getString("email");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        JLabel lab1 = new JLabel("Guest Number :");
+        JLabel lab2 = new JLabel("Guest Name :");
+        JLabel lab3 = new JLabel("Guest Phone Number :");
+        JLabel lab4 = new JLabel("Guest Email :");
+
+        JTextField fl1 = new JTextField(String.valueOf(item));
+        fl1.setEditable(false);
+        JTextField fl2 = new JTextField(name);
+        fl2.setEditable(false);
+        JTextField fl3 = new JTextField(phone);
+        fl3.setEditable(false);
+        JTextField fl4 = new JTextField(email);
+        fl4.setEditable(false);
+
+        panel.removeAll();
+
+        GridBagConstraints con = new GridBagConstraints();
+        con.anchor = GridBagConstraints.CENTER;
+        con.fill = GridBagConstraints.HORIZONTAL;
+        con.insets = new Insets(5, 5, 5, 5);
+
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        panel.add(lab1, con);
+        con.gridy = 1;
+        panel.add(lab2, con);
+        con.gridy = 2;
+        panel.add(lab3, con);
+        con.gridy = 3;
+        panel.add(lab4, con);
+
+        con.gridx = 1;
+        con.gridy = 0;
+        panel.add(fl1, con);
+        con.gridy = 1;
+        panel.add(fl2, con);
+        con.gridy = 2;
+        panel.add(fl3, con);
+        con.gridy = 3;
+        panel.add(fl4, con);
+
+        con.gridx = 0;
+        con.gridy = 4;
+        con.fill = GridBagConstraints.BOTH;
+        con.gridwidth = 2;
+        con.weighty = 1000;
+        panel.add(new JPanel(), con);
     }
 
     public void renderall(JPanel panel) {
@@ -1110,6 +1394,10 @@ class Bookingpanel implements Dataloader {
     PreparedStatement editentry;
     PreparedStatement delete_entry;
     PreparedStatement getallentry;
+    PreparedStatement checkexistroom;
+    PreparedStatement checkexistguest;
+    PreparedStatement get_room;
+    PreparedStatement get_guest;
 
     Bookingpanel(JFrame frame) {
         this.frame = frame;
@@ -1121,6 +1409,10 @@ class Bookingpanel implements Dataloader {
                     "UPDATE booking SET checkin = ?, checkout = ?, roomid = ?, guestid = ? WHERE bookingid = ?;");
             delete_entry = Database.dbconn.prepareStatement("DELETE FROM booking WHERE bookingid = ?;");
             getallentry = Database.dbconn.prepareStatement("SELECT * FROM booking;");
+            checkexistroom = Database.dbconn.prepareStatement("SELECT * FROM room WHERE roomid = ?;");
+            checkexistguest = Database.dbconn.prepareStatement("SELECT * FROM guest WHERE guestid = ?;");
+            get_guest = Database.dbconn.prepareStatement("SELECT * FROM guest;");
+            get_room = Database.dbconn.prepareStatement("SELECT * FROM room;");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(frame,
                     ex,
@@ -1129,11 +1421,103 @@ class Bookingpanel implements Dataloader {
         }
     }
 
+    Vector<Integer> roomids() {
+        Vector<Integer> ids = new Vector<Integer>();
+        try {
+            ResultSet rslt = get_room.executeQuery();
+            while (rslt.next()) {
+                ids.add(rslt.getInt("roomid"));
+            }
+            return ids;
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
+    }
+
+    Vector<Integer> guestids() {
+        Vector<Integer> ids = new Vector<Integer>();
+        try {
+            ResultSet rslt = get_guest.executeQuery();
+            while (rslt.next()) {
+                ids.add(rslt.getInt("guestid"));
+            }
+            return ids;
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
+    }
+
     public void insert() {
         JDialog dialog = new JDialog(frame, "Create New Booking");
-        dialog.setSize(500, 300);
+        dialog.setSize(500, 200);
+        dialog.setResizable(false);
+        dialog.setLayout(new GridBagLayout());
+        GridBagConstraints con = new GridBagConstraints();
+        con.anchor = GridBagConstraints.CENTER;
+        con.fill = GridBagConstraints.BOTH;
 
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        JLabel lab1 = new JLabel("      Checkin Date: ");
+        JLabel lab2 = new JLabel("      Checkout Date: ");
+        JLabel lab3 = new JLabel("      Room Number: ");
+        JLabel lab4 = new JLabel("      Guest Number: ");
+
+        dialog.add(lab1, con);
+        con.gridy = 1;
+        dialog.add(lab2, con);
+        con.gridy = 2;
+        dialog.add(lab3, con);
+        con.gridy = 3;
+        dialog.add(lab4, con);
+
+        con.gridx=1;
+        con.gridy=0;
+        JSpinner chkin = new JSpinner(new SpinnerDateModel());
+
+        con.gridy=2;
+        JComboBox<Integer> cmb1 = new JComboBox<Integer>(roomids());
+        dialog.add(cmb1,con);
+        con.gridy=3;
+        JComboBox<Integer> cmb2 = new JComboBox<Integer>(guestids());
+        dialog.add(cmb2,con);
+
+        con.gridy = 4;
+        JButton btn = new MyButton(new Color(130, 180, 190),
+                new Color(160, 160, 160),
+                Color.blue,
+                new EmptyBorder(5, 5, 5, 5),
+                new MatteBorder(3, 3, 3, 3, Color.GRAY));
+        btn.setText("Create");
+        btn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame,
+                            ex,
+                            "Database Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    dialog.dispose();
+                }
+            }
+        });
+        dialog.add(btn, con);
         dialog.setVisible(true);
+
     }
 
     public int remove(int item) {
