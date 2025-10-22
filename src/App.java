@@ -5,8 +5,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.Period;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
@@ -466,6 +464,7 @@ class Room implements Hotelmanager {
         bgr.add(rd3);
         dialog.add(rd3, con);
 
+        con.insets = new Insets(4, 4, 4, 4);
         con.gridx = 0;
         con.gridy = 3;
         con.gridwidth = 1;
@@ -473,7 +472,6 @@ class Room implements Hotelmanager {
         con.weightx = 1;
         con.weighty = 1;
         JLabel lab2 = new JLabel("      Room Price per Night: ");
-        lab2.setBorder(new CompoundBorder(new MatteBorder(3, 0, 3, 0, Color.GRAY), new EmptyBorder(5, 0, 5, 0)));
         dialog.add(lab2, con);
 
         con.gridx = 1;
@@ -484,7 +482,6 @@ class Room implements Hotelmanager {
         con.weighty = 1;
         JSpinner spi = new JSpinner(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 100));
         dialog.add(spi, con);
-        spi.setBorder(new CompoundBorder(new MatteBorder(3, 0, 3, 0, Color.GRAY), new EmptyBorder(5, 0, 5, 0)));
         con.gridy = 4;
         JButton btn = new MyButton(new Color(130, 180, 190),
                 new Color(160, 160, 160),
@@ -607,7 +604,7 @@ class Room implements Hotelmanager {
         con.gridy = 2;
         bgr.add(rd3);
         dialog.add(rd3, con);
-
+        con.insets = new Insets(4, 4, 4, 4);
         con.gridx = 0;
         con.gridy = 3;
         con.gridwidth = 1;
@@ -615,7 +612,7 @@ class Room implements Hotelmanager {
         con.weightx = 1;
         con.weighty = 1;
         JLabel lab2 = new JLabel("      Room Price per Night: ");
-        lab2.setBorder(new CompoundBorder(new MatteBorder(3, 0, 3, 0, Color.GRAY), new EmptyBorder(5, 0, 5, 0)));
+
         dialog.add(lab2, con);
 
         con.gridx = 1;
@@ -626,7 +623,6 @@ class Room implements Hotelmanager {
         con.weighty = 1;
         JSpinner spi = new JSpinner(new SpinnerNumberModel(price, 0, Integer.MAX_VALUE, 100));
         dialog.add(spi, con);
-        spi.setBorder(new CompoundBorder(new MatteBorder(3, 0, 3, 0, Color.GRAY), new EmptyBorder(5, 0, 5, 0)));
         con.gridy = 4;
         JButton btn = new MyButton(new Color(130, 180, 190),
                 new Color(160, 160, 160),
@@ -1376,7 +1372,6 @@ class Booking implements Hotelmanager {
         java.sql.Date checkout;
         int roomid;
         int guestid;
-        int bill;
         try {
             getentry.setInt(1, item);
             ResultSet rslt = getentry.executeQuery();
@@ -1390,15 +1385,7 @@ class Booking implements Hotelmanager {
             checkin = rslt.getDate("checkin");
             checkout = rslt.getDate("checkout");
             roomid = rslt.getInt("roomid");
-            guestid = rslt.getInt("guestid");
-            checkexistroom.setInt(1, roomid);
-            rslt = checkexistroom.executeQuery();
-            rslt.next();
-            LocalDate localDate1 = checkin.toLocalDate();
-            LocalDate localDate2 = checkout.toLocalDate();
-            long daysBetween = ChronoUnit.DAYS.between(localDate1, localDate2);
-            bill = (int) daysBetween * rslt.getInt("price");
-            
+            guestid = rslt.getInt("guestid");            
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(frame,
