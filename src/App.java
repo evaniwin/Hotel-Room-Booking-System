@@ -1,6 +1,7 @@
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.*;
 import javax.swing.border.*;
@@ -415,8 +416,9 @@ class Contentpanel {
         this.panel = panel;
         configuremainpanel();
         configureinfopanel();
-        loader.renderall(panel.innerTiles);
+        loader.renderall(panel.innerTiles, this);
         loader.getinfo(1, panel.infopanel);
+        infopanelcurrent = 1;
     }
 
     private void configuremainpanel() {
@@ -439,11 +441,12 @@ class Contentpanel {
                 new MatteBorder(3, 3, 3, 3, Color.GRAY));
         createButton.setText("Create New");
         createButton.setIcon(new ImageIcon("icons/list-add.png"));
+        Contentpanel self = this;
         createButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 loader.insert();
-                loader.renderall(panel.innerTiles);
+                loader.renderall(panel.innerTiles, self);
                 loader.getinfo(infopanelcurrent, panel.infopanel);
             }
         });
@@ -459,8 +462,8 @@ class Contentpanel {
         refreshButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                loader.renderall(panel.innerTiles);
                 loader.getinfo(infopanelcurrent, panel.infopanel);
+                loader.renderall(panel.innerTiles, self);
             }
         });
         additionbuttons.add(refreshButton, BorderLayout.WEST);
@@ -513,11 +516,12 @@ class Contentpanel {
                 new MatteBorder(3, 3, 3, 3, Color.GRAY));
         editButton.setText("Edit");
         editButton.setIcon(new ImageIcon("icons/document-edit.png"));
+        Contentpanel self = this;
         editButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 loader.edit(infopanelcurrent);
-                loader.renderall(panel.innerTiles);
+                loader.renderall(panel.innerTiles, self);
                 loader.getinfo(infopanelcurrent, panel.infopanel);
             }
         });
@@ -537,7 +541,7 @@ class Contentpanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 infopanelcurrent = loader.remove(infopanelcurrent);
-                loader.renderall(panel.innerTiles);
+                loader.renderall(panel.innerTiles, self);
                 loader.getinfo(infopanelcurrent, panel.infopanel);
             }
         });
@@ -714,7 +718,7 @@ interface Dataloader {
 
     void getinfo(int item, JPanel panel);
 
-    void renderall(JPanel panel);
+    void renderall(JPanel panel, Contentpanel cp);
 }
 
 class Roompanel implements Dataloader {
@@ -732,7 +736,7 @@ class Roompanel implements Dataloader {
         try {
             insertentry = Database.dbconn.prepareStatement("INSERT INTO room (room_type,price) VALUES (?,?);");
             getentry = Database.dbconn.prepareStatement("SELECT * FROM room  WHERE roomid = ?;");
-            editentry = Database.dbconn.prepareStatement("UPDATE room SET roomtype = ?, price = ? WHERE roomid = ?;");
+            editentry = Database.dbconn.prepareStatement("UPDATE room SET room_type = ?, price = ? WHERE roomid = ?;");
             delete_entry = Database.dbconn.prepareStatement("DELETE FROM room WHERE roomid = ?;");
             getallentry = Database.dbconn.prepareStatement("SELECT * FROM room;");
             getrelatedbookings = Database.dbconn.prepareStatement(
@@ -957,6 +961,7 @@ class Roompanel implements Dataloader {
                     editentry.setInt(1, roomtype);
                     editentry.setInt(2, price);
                     editentry.setInt(3, item);
+                    editentry.execute();
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(frame,
                             ex,
@@ -1005,6 +1010,8 @@ class Roompanel implements Dataloader {
         fl3.setEditable(false);
 
         panel.removeAll();
+        panel.revalidate();
+        panel.repaint();
 
         GridBagConstraints con = new GridBagConstraints();
         con.anchor = GridBagConstraints.CENTER;
@@ -1040,18 +1047,68 @@ class Roompanel implements Dataloader {
     }
 
     // Todo
-    public void renderall(JPanel panel) {
-        int roomid;
-        int roomtype;
-        int price;
+    public void renderall(JPanel panel, Contentpanel cp) {
+        panel.removeAll();
+        panel.revalidate();
+        panel.repaint();
+        int i = 0;
+        GridBagConstraints con = new GridBagConstraints();
         try {
             ResultSet rslt = getallentry.executeQuery();
             while (rslt.next()) {
-                roomid = rslt.getInt("roomid");
-                roomtype = rslt.getInt("room_type");
-                price = rslt.getInt("price");
+                int roomid = rslt.getInt("roomid");
+                int roomtype = rslt.getInt("room_type");
+                int price = rslt.getInt("price");
+                JButton btn = new MyButton(new Color(130, 180, 190),
+                        new Color(160, 160, 160),
+                        Color.blue,
+                        new EmptyBorder(5, 5, 5, 5),
+                        new MatteBorder(3, 3, 3, 3, Color.GRAY));
+                con.anchor = GridBagConstraints.CENTER;
+                con.fill = GridBagConstraints.HORIZONTAL;
+                con.gridx = 0;
+                con.gridy = i;
+                con.gridwidth = 1;
+                con.gridheight = 1;
+                con.weightx = 1;
+                con.weighty = 0;
+                panel.add(btn, con);
+                JPanel tile = new JPanel(new GridBagLayout());
+                btn.add(tile);
+                con.gridx = 0;
+                con.gridy = 0;
+                con.gridwidth = 1;
+                con.gridheight = 1;
+                con.weightx = 1;
+                con.weighty = 0;
+                JLabel lab1 = new JLabel("Room Number: " + roomid);
+                tile.add(lab1, con);
+                con.gridx = 1;
+                JLabel lab2 = new JLabel("Room Type : " + ROOM_TYPE.strfromint(roomtype));
+                tile.add(lab2, con);
+                con.gridx = 2;
+                JLabel lab3 = new JLabel("Price: " + price);
+                tile.add(lab3, con);
+                Dataloader self = this;
+                btn.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent ex) {
+                        self.getinfo(roomid, cp.panel.infopanel);
+                        cp.infopanelcurrent = roomid;
+                    }
+                });
 
+                i++;
             }
+            con.anchor = GridBagConstraints.CENTER;
+            con.fill = GridBagConstraints.VERTICAL;
+            con.gridx = 0;
+            con.gridy = i;
+            con.gridwidth = 1;
+            con.gridheight = 1;
+            con.weightx = 1;
+            con.weighty = 1;
+            panel.add(new JPanel(), con);
+
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(frame,
                     ex,
@@ -1383,7 +1440,27 @@ class Guestpanel implements Dataloader {
         panel.add(new JPanel(), con);
     }
 
-    public void renderall(JPanel panel) {
+    public void renderall(JPanel panel, Contentpanel cp) {
+        int guestid;
+        String name;
+        String phone;
+        String email;
+        try {
+            ResultSet rslt = getallentry.executeQuery();
+            while (rslt.next()) {
+                guestid = rslt.getInt("guestid");
+                name = rslt.getString("name");
+                phone = rslt.getString("phone");
+                email = rslt.getString("email");
+
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
     }
 }
 
@@ -1457,7 +1534,7 @@ class Bookingpanel implements Dataloader {
 
     public void insert() {
         JDialog dialog = new JDialog(frame, "Create New Booking");
-        dialog.setSize(500, 200);
+        dialog.setSize(500, 300);
         dialog.setResizable(false);
         dialog.setLayout(new GridBagLayout());
         GridBagConstraints con = new GridBagConstraints();
@@ -1476,23 +1553,28 @@ class Bookingpanel implements Dataloader {
         JLabel lab4 = new JLabel("      Guest Number: ");
 
         dialog.add(lab1, con);
-        con.gridy = 1;
-        dialog.add(lab2, con);
-        con.gridy = 2;
-        dialog.add(lab3, con);
         con.gridy = 3;
+        dialog.add(lab2, con);
+        con.gridy = 6;
+        dialog.add(lab3, con);
+        con.gridy = 7;
         dialog.add(lab4, con);
 
-        con.gridx=1;
-        con.gridy=0;
-        JSpinner chkin = new JSpinner(new SpinnerDateModel());
+        con.gridx = 1;
+        con.gridy = 0;
+        JSpinner spi1 = new JSpinner(new SpinnerDateModel(new Date(2025, 1, 1), null, null, Calendar.YEAR));
+        dialog.add(spi1, con);
 
-        con.gridy=2;
+        con.gridy = 1;
+        JSpinner spi4 = new JSpinner(new SpinnerDateModel(new Date(), null, null, Calendar.DAY_OF_MONTH));
+        dialog.add(spi4, con);
+
+        con.gridy = 2;
         JComboBox<Integer> cmb1 = new JComboBox<Integer>(roomids());
-        dialog.add(cmb1,con);
-        con.gridy=3;
+        dialog.add(cmb1, con);
+        con.gridy = 3;
         JComboBox<Integer> cmb2 = new JComboBox<Integer>(guestids());
-        dialog.add(cmb2,con);
+        dialog.add(cmb2, con);
 
         con.gridy = 4;
         JButton btn = new MyButton(new Color(130, 180, 190),
@@ -1537,7 +1619,7 @@ class Bookingpanel implements Dataloader {
     public void getinfo(int item, JPanel panel) {
     }
 
-    public void renderall(JPanel panel) {
+    public void renderall(JPanel panel, Contentpanel cp) {
     }
 }
 
