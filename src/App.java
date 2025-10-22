@@ -1,10 +1,14 @@
 import java.util.*;
-import java.util.Date;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 
 enum ROOM_TYPE {
     SINGLE, DOUBLE, DELUXE;
@@ -404,7 +408,7 @@ class Room implements Hotelmanager {
     PreparedStatement editentry;
     PreparedStatement delete_entry;
     PreparedStatement getallentry;
-    PreparedStatement getrelatedbookings;
+    PreparedStatement delrelatedbookings;
     PreparedStatement findnearestid;
 
     Room(JFrame frame) {
@@ -415,8 +419,8 @@ class Room implements Hotelmanager {
             editentry = Database.dbconn.prepareStatement("UPDATE room SET room_type = ?, price = ? WHERE roomid = ?;");
             delete_entry = Database.dbconn.prepareStatement("DELETE FROM room WHERE roomid = ?;");
             getallentry = Database.dbconn.prepareStatement("SELECT * FROM room;");
-            getrelatedbookings = Database.dbconn.prepareStatement(
-                    "SELECT booking.* FROM room INNER JOIN booking ON room.roomid = booking.roomid WHERE room.roomid = ?;");
+            delrelatedbookings = Database.dbconn.prepareStatement(
+                    "DELETE FROM booking where roomid = ?;");
             findnearestid = Database.dbconn
                     .prepareStatement("SELECT * FROM room ORDER BY ABS(room.roomid - ?) LIMIT 1;");
         } catch (Exception ex) {
@@ -510,7 +514,7 @@ class Room implements Hotelmanager {
         dialog.setVisible(true);
 
     }
-    //TODO remove bookings
+
     public int remove(int item) {
         try {
             getentry.setInt(1, item);
@@ -527,6 +531,8 @@ class Room implements Hotelmanager {
                     "Confirm Deletion",
                     JOptionPane.YES_NO_OPTION);
             if (choice == JOptionPane.YES_OPTION) {
+                delrelatedbookings.setInt(1, item);
+                delrelatedbookings.execute();
                 delete_entry.setInt(1, item);
                 delete_entry.execute();
                 findnearestid.setInt(1, item);
@@ -650,6 +656,7 @@ class Room implements Hotelmanager {
         dialog.add(btn, con);
         dialog.setVisible(true);
     }
+
     // TODO list Bookings
     public void getinfo(int item, JPanel panel) {
 
@@ -677,11 +684,11 @@ class Room implements Hotelmanager {
         JLabel lab1 = new JLabel("Room Number :");
         JLabel lab2 = new JLabel("Room Type :");
         JLabel lab3 = new JLabel("Price Per Night :");
-        JTextField fl1 = new JTextField(String.valueOf(item),10);
+        JTextField fl1 = new JTextField(String.valueOf(item), 10);
         fl1.setEditable(false);
-        JTextField fl2 = new JTextField(ROOM_TYPE.strfromint(roomtype),10);
+        JTextField fl2 = new JTextField(ROOM_TYPE.strfromint(roomtype), 10);
         fl2.setEditable(false);
-        JTextField fl3 = new JTextField(String.valueOf(price),10);
+        JTextField fl3 = new JTextField(String.valueOf(price), 10);
         fl3.setEditable(false);
 
         panel.removeAll();
@@ -720,7 +727,6 @@ class Room implements Hotelmanager {
         con.weighty = 1000;
         panel.add(new JPanel(), con);
     }
-
 
     public void renderall(JPanel panel, Contentpanel cp) {
         panel.removeAll();
@@ -801,7 +807,7 @@ class Guest implements Hotelmanager {
     PreparedStatement editentry;
     PreparedStatement delete_entry;
     PreparedStatement getallentry;
-    PreparedStatement getrelatedbookings;
+    PreparedStatement delrelatedbookings;
     PreparedStatement findnearestid;
 
     Guest(JFrame frame) {
@@ -813,8 +819,8 @@ class Guest implements Hotelmanager {
                     .prepareStatement("UPDATE guest SET name = ?,phone = ?, email = ? WHERE guestid = ?;");
             delete_entry = Database.dbconn.prepareStatement("DELETE FROM guest WHERE guestid = ?;");
             getallentry = Database.dbconn.prepareStatement("SELECT * FROM guest;");
-            getrelatedbookings = Database.dbconn.prepareStatement(
-                    "SELECT booking.* FROM guest INNER JOIN booking ON guest.guestid = booking.guestid WHERE guest.guestid = ?;");
+            delrelatedbookings = Database.dbconn.prepareStatement(
+                    "DELETE FROM booking where guestid = ?;");
             findnearestid = Database.dbconn
                     .prepareStatement("SELECT * FROM guest ORDER BY ABS(guest.guestid - ?) LIMIT 1;");
         } catch (Exception ex) {
@@ -833,7 +839,7 @@ class Guest implements Hotelmanager {
         dialog.setLayout(new GridBagLayout());
         GridBagConstraints con = new GridBagConstraints();
         con.anchor = GridBagConstraints.CENTER;
-        con.fill = GridBagConstraints.HORIZONTAL;
+        con.fill = GridBagConstraints.BOTH;
 
         con.gridx = 0;
         con.gridy = 0;
@@ -845,14 +851,14 @@ class Guest implements Hotelmanager {
         JLabel lab1 = new JLabel("      Guest Name: ");
         JLabel lab2 = new JLabel("      Guest Phone Number:  ");
         JLabel lab3 = new JLabel("      Guest Email: ");
-
+        con.insets = new Insets(4, 4, 4, 0);
         con.gridy = 0;
         dialog.add(lab1, con);
         con.gridy = 1;
         dialog.add(lab2, con);
         con.gridy = 2;
         dialog.add(lab3, con);
-
+        con.insets = new Insets(4, 0, 4, 4);
         JTextField tf1 = new JTextField(30);
         JTextField tf2 = new JTextField(30);
         JTextField tf3 = new JTextField(30);
@@ -892,17 +898,9 @@ class Guest implements Hotelmanager {
         con.gridx = 1;
         con.gridy = 3;
         dialog.add(btn, con);
-        con.gridy = 0;
-        con.gridx = 2;
-        JPanel pan = new JPanel();
-        Dimension dim = new Dimension(8, 8);
-        pan.setMinimumSize(dim);
-        pan.setMaximumSize(dim);
-        pan.setPreferredSize(dim);
-        dialog.add(pan, con);
         dialog.setVisible(true);
     }
-    //TODO remove bookings
+
     public int remove(int item) {
         try {
             getentry.setInt(1, item);
@@ -919,6 +917,8 @@ class Guest implements Hotelmanager {
                     "Confirm Deletion",
                     JOptionPane.YES_NO_OPTION);
             if (choice == JOptionPane.YES_OPTION) {
+                delrelatedbookings.setInt(1, item);
+                delrelatedbookings.execute();
                 delete_entry.setInt(1, item);
                 delete_entry.execute();
                 findnearestid.setInt(1, item);
@@ -967,7 +967,7 @@ class Guest implements Hotelmanager {
         dialog.setLayout(new GridBagLayout());
         GridBagConstraints con = new GridBagConstraints();
         con.anchor = GridBagConstraints.CENTER;
-        con.fill = GridBagConstraints.HORIZONTAL;
+        con.fill = GridBagConstraints.BOTH;
 
         con.gridx = 0;
         con.gridy = 0;
@@ -979,14 +979,14 @@ class Guest implements Hotelmanager {
         JLabel lab1 = new JLabel("      Guest Name: ");
         JLabel lab2 = new JLabel("      Guest Phone Number:  ");
         JLabel lab3 = new JLabel("      Guest Email: ");
-
+        con.insets = new Insets(4, 4, 4, 0);
         con.gridy = 0;
         dialog.add(lab1, con);
         con.gridy = 1;
         dialog.add(lab2, con);
         con.gridy = 2;
         dialog.add(lab3, con);
-
+        con.insets = new Insets(4, 0, 4, 4);
         JTextField tf1 = new JTextField(guestname, 30);
         JTextField tf2 = new JTextField(guestphone, 30);
         JTextField tf3 = new JTextField(guestemail, 30);
@@ -1027,17 +1027,10 @@ class Guest implements Hotelmanager {
         con.gridx = 1;
         con.gridy = 3;
         dialog.add(btn, con);
-        con.gridy = 0;
-        con.gridx = 2;
-        JPanel pan = new JPanel();
-        Dimension dim = new Dimension(8, 8);
-        pan.setMinimumSize(dim);
-        pan.setMaximumSize(dim);
-        pan.setPreferredSize(dim);
-        dialog.add(pan, con);
         dialog.setVisible(true);
     }
-    //TODO show bookings
+
+    // TODO show bookings
     public void getinfo(int item, JPanel panel) {
         String name;
         String phone;
@@ -1067,13 +1060,13 @@ class Guest implements Hotelmanager {
         JLabel lab3 = new JLabel("Guest Phone Number :");
         JLabel lab4 = new JLabel("Guest Email :");
 
-        JTextField fl1 = new JTextField(String.valueOf(item),15);
+        JTextField fl1 = new JTextField(String.valueOf(item), 15);
         fl1.setEditable(false);
-        JTextField fl2 = new JTextField(name,15);
+        JTextField fl2 = new JTextField(name, 15);
         fl2.setEditable(false);
-        JTextField fl3 = new JTextField(phone,15);
+        JTextField fl3 = new JTextField(phone, 15);
         fl3.setEditable(false);
-        JTextField fl4 = new JTextField(email,15);
+        JTextField fl4 = new JTextField(email, 15);
         fl4.setEditable(false);
 
         panel.removeAll();
@@ -1205,6 +1198,7 @@ class Booking implements Hotelmanager {
     PreparedStatement checkexistguest;
     PreparedStatement get_room;
     PreparedStatement get_guest;
+    PreparedStatement findnearestid;
 
     Booking(JFrame frame) {
         this.frame = frame;
@@ -1220,6 +1214,8 @@ class Booking implements Hotelmanager {
             checkexistguest = Database.dbconn.prepareStatement("SELECT * FROM guest WHERE guestid = ?;");
             get_guest = Database.dbconn.prepareStatement("SELECT * FROM guest;");
             get_room = Database.dbconn.prepareStatement("SELECT * FROM room;");
+            findnearestid = Database.dbconn
+                    .prepareStatement("SELECT * FROM booking ORDER BY ABS(booking.bookingid - ?) LIMIT 1;");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(frame,
                     ex,
@@ -1264,7 +1260,7 @@ class Booking implements Hotelmanager {
 
     public void insert() {
         JDialog dialog = new JDialog(frame, "Create New Booking");
-        dialog.setSize(500, 300);
+        dialog.setSize(500, 250);
         dialog.setResizable(false);
         dialog.setLayout(new GridBagLayout());
         GridBagConstraints con = new GridBagConstraints();
@@ -1281,23 +1277,26 @@ class Booking implements Hotelmanager {
         JLabel lab2 = new JLabel("      Checkout Date: ");
         JLabel lab3 = new JLabel("      Room Number: ");
         JLabel lab4 = new JLabel("      Guest Number: ");
-
+        con.insets = new Insets(4, 4, 4, 0);
         dialog.add(lab1, con);
-        con.gridy = 3;
+        con.gridy = 1;
         dialog.add(lab2, con);
-        con.gridy = 6;
+        con.gridy = 2;
         dialog.add(lab3, con);
-        con.gridy = 7;
+        con.gridy = 3;
         dialog.add(lab4, con);
 
+        con.insets = new Insets(4, 0, 4, 4);
         con.gridx = 1;
         con.gridy = 0;
-        JSpinner spi1 = new JSpinner(new SpinnerDateModel(new Date(2025, 1, 1), null, null, Calendar.YEAR));
+        JSpinner spi1 = new JSpinner(new SpinnerDateModel());
+        spi1.setEditor(new JSpinner.DateEditor(spi1, "dd-MM-yyyy"));
         dialog.add(spi1, con);
 
         con.gridy = 1;
-        JSpinner spi4 = new JSpinner(new SpinnerDateModel(new Date(), null, null, Calendar.DAY_OF_MONTH));
-        dialog.add(spi4, con);
+        JSpinner spi2 = new JSpinner(new SpinnerDateModel());
+        spi2.setEditor(new JSpinner.DateEditor(spi2, "dd-MM-yyyy"));
+        dialog.add(spi2, con);
 
         con.gridy = 2;
         JComboBox<Integer> cmb1 = new JComboBox<Integer>(roomids());
@@ -1316,7 +1315,13 @@ class Booking implements Hotelmanager {
         btn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-
+                    Date in = (Date) spi1.getValue();
+                    Date out = (Date) spi2.getValue();
+                    insertentry.setDate(1, new java.sql.Date(in.getTime()));
+                    insertentry.setDate(2, new java.sql.Date(out.getTime()));
+                    insertentry.setInt(3, (int) cmb1.getSelectedItem());
+                    insertentry.setInt(4, (int) cmb2.getSelectedItem());
+                    insertentry.execute();
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(frame,
                             ex,
@@ -1333,23 +1338,345 @@ class Booking implements Hotelmanager {
     }
 
     public int remove(int item) {
-        JOptionPane.showConfirmDialog(frame, "Are you sure you want to Delete Booking Number '" + item + "'",
-                "Confirm Deletion",
-                JOptionPane.YES_NO_OPTION);
-        return 0;
+        try {
+            getentry.setInt(1, item);
+            ResultSet rslt = getentry.executeQuery();
+            if (!rslt.next()) {
+                JOptionPane.showMessageDialog(frame,
+                        "Booking no " + item + " does not exist",
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return item;
+            }
+            int choice = JOptionPane.showConfirmDialog(frame,
+                    "Are you sure you want to Delete Guest Number '" + item + "'",
+                    "Confirm Deletion",
+                    JOptionPane.YES_NO_OPTION);
+            if (choice == JOptionPane.YES_OPTION) {
+                delete_entry.setInt(1, item);
+                delete_entry.execute();
+                findnearestid.setInt(1, item);
+                ResultSet rs = findnearestid.executeQuery();
+                rs.next();
+                return rs.getInt("guestid");
+
+            }
+            return item;
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return item;
+        }
     }
 
     public void edit(int item) {
-        JDialog dialog = new JDialog(frame, "Edit Booking Details");
-        dialog.setSize(500, 300);
+        java.sql.Date checkin;
+        java.sql.Date checkout;
+        int roomid;
+        int guestid;
+        int bill;
+        try {
+            getentry.setInt(1, item);
+            ResultSet rslt = getentry.executeQuery();
+            if (!rslt.next()) {
+                JOptionPane.showMessageDialog(frame,
+                        "Booking Number" + item + " does not exist",
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            checkin = rslt.getDate("checkin");
+            checkout = rslt.getDate("checkout");
+            roomid = rslt.getInt("roomid");
+            guestid = rslt.getInt("guestid");
+            checkexistroom.setInt(1, roomid);
+            rslt = checkexistroom.executeQuery();
+            rslt.next();
+            LocalDate localDate1 = checkin.toLocalDate();
+            LocalDate localDate2 = checkout.toLocalDate();
+            long daysBetween = ChronoUnit.DAYS.between(localDate1, localDate2);
+            bill = (int) daysBetween * rslt.getInt("price");
+            
 
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        JDialog dialog = new JDialog(frame, "Edit Booking Details");
+        dialog.setSize(500, 250);
+        dialog.setResizable(false);
+        dialog.setLayout(new GridBagLayout());
+        GridBagConstraints con = new GridBagConstraints();
+        con.anchor = GridBagConstraints.CENTER;
+        con.fill = GridBagConstraints.BOTH;
+
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        JLabel lab1 = new JLabel("      Checkin Date: ");
+        JLabel lab2 = new JLabel("      Checkout Date: ");
+        JLabel lab3 = new JLabel("      Room Number: ");
+        JLabel lab4 = new JLabel("      Guest Number: ");
+        con.insets = new Insets(4, 4, 4, 0);
+        dialog.add(lab1, con);
+        con.gridy = 1;
+        dialog.add(lab2, con);
+        con.gridy = 2;
+        dialog.add(lab3, con);
+        con.gridy = 3;
+        dialog.add(lab4, con);
+
+        con.insets = new Insets(4, 0, 4, 4);
+        con.gridx = 1;
+        con.gridy = 0;
+        JSpinner spi1 = new JSpinner(new SpinnerDateModel());
+        spi1.setEditor(new JSpinner.DateEditor(spi1, "dd-MM-yyyy"));
+        spi1.setValue(checkin);
+        dialog.add(spi1, con);
+
+        con.gridy = 1;
+        JSpinner spi2 = new JSpinner(new SpinnerDateModel());
+        spi2.setEditor(new JSpinner.DateEditor(spi2, "dd-MM-yyyy"));
+        spi2.setValue(checkout);
+        dialog.add(spi2, con);
+
+        con.gridy = 2;
+        JComboBox<Integer> cmb1 = new JComboBox<Integer>(roomids());
+        cmb1.setSelectedItem(roomid);
+        dialog.add(cmb1, con);
+        con.gridy = 3;
+        JComboBox<Integer> cmb2 = new JComboBox<Integer>(guestids());
+        cmb2.setSelectedItem(guestid);
+        dialog.add(cmb2, con);
+
+        con.gridy = 4;
+        JButton btn = new MyButton(new Color(130, 180, 190),
+                new Color(160, 160, 160),
+                Color.blue,
+                new EmptyBorder(5, 5, 5, 5),
+                new MatteBorder(3, 3, 3, 3, Color.GRAY));
+        btn.setText("Create");
+        btn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    Date in = (Date) spi1.getValue();
+                    Date out = (Date) spi2.getValue();
+                    insertentry.setDate(1, new java.sql.Date(in.getTime()));
+                    insertentry.setDate(2, new java.sql.Date(out.getTime()));
+                    insertentry.setInt(3, (int) cmb1.getSelectedItem());
+                    insertentry.setInt(4, (int) cmb2.getSelectedItem());
+                    insertentry.execute();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(frame,
+                            ex,
+                            "Database Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    dialog.dispose();
+                }
+            }
+        });
+        dialog.add(btn, con);
         dialog.setVisible(true);
     }
 
     public void getinfo(int item, JPanel panel) {
+        java.sql.Date checkin;
+        java.sql.Date checkout;
+        int roomid;
+        int guestid;
+        int bill;
+        try {
+            getentry.setInt(1, item);
+            ResultSet rslt = getentry.executeQuery();
+            if (!rslt.next()) {
+                JOptionPane.showMessageDialog(frame,
+                        "Booking Number" + item + " does not exist",
+                        "Database Error",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            checkin = rslt.getDate("checkin");
+            checkout = rslt.getDate("checkout");
+            roomid = rslt.getInt("roomid");
+            guestid = rslt.getInt("guestid");
+            checkexistroom.setInt(1, roomid);
+            rslt = checkexistroom.executeQuery();
+            rslt.next();
+            LocalDate localDate1 = checkin.toLocalDate();
+            LocalDate localDate2 = checkout.toLocalDate();
+            long daysBetween = ChronoUnit.DAYS.between(localDate1, localDate2);
+            bill = (int) daysBetween * rslt.getInt("price");
+            
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        JLabel lab1 = new JLabel("Booking Number :");
+        JLabel lab2 = new JLabel("Checkin Date :");
+        JLabel lab3 = new JLabel("Checkout Date :");
+        JLabel lab4 = new JLabel("Room Number :");
+        JLabel lab5 = new JLabel("Guest Number :");
+        JLabel lab6 = new JLabel("Calculated Bill :");
+
+        JTextField fl1 = new JTextField(String.valueOf(item), 15);
+        fl1.setEditable(false);
+        JTextField fl2 = new JTextField(checkin.toString(), 15);
+        fl2.setEditable(false);
+        JTextField fl3 = new JTextField(checkout.toString(), 15);
+        fl3.setEditable(false);
+        JTextField fl4 = new JTextField(String.valueOf(roomid), 15);
+        fl4.setEditable(false);
+        JTextField fl5 = new JTextField(String.valueOf(guestid), 15);
+        fl4.setEditable(false);
+        JTextField fl6 = new JTextField(String.valueOf(bill), 15);
+        fl4.setEditable(false);
+
+        panel.removeAll();
+        panel.revalidate();
+        panel.repaint();
+
+        GridBagConstraints con = new GridBagConstraints();
+        con.anchor = GridBagConstraints.CENTER;
+        con.fill = GridBagConstraints.HORIZONTAL;
+        con.insets = new Insets(5, 5, 5, 5);
+
+        con.gridx = 0;
+        con.gridy = 0;
+        con.gridwidth = 1;
+        con.gridheight = 1;
+        con.weightx = 1;
+        con.weighty = 1;
+        panel.add(lab1, con);
+        con.gridy = 1;
+        panel.add(lab2, con);
+        con.gridy = 2;
+        panel.add(lab3, con);
+        con.gridy = 3;
+        panel.add(lab4, con);
+        con.gridy = 4;
+        panel.add(lab5, con);
+        con.gridy = 5;
+        panel.add(lab6, con);
+
+        con.gridx = 1;
+        con.gridy = 0;
+        panel.add(fl1, con);
+        con.gridy = 1;
+        panel.add(fl2, con);
+        con.gridy = 2;
+        panel.add(fl3, con);
+        con.gridy = 3;
+        panel.add(fl4, con);
+        con.gridy = 4;
+        panel.add(fl5, con);
+        con.gridy = 5;
+        panel.add(fl6, con);
+
+        con.gridx = 0;
+        con.gridy = 6;
+        con.fill = GridBagConstraints.BOTH;
+        con.gridwidth = 2;
+        con.weighty = 1000;
+        panel.add(new JPanel(), con);
     }
 
     public void renderall(JPanel panel, Contentpanel cp) {
+        panel.removeAll();
+        panel.revalidate();
+        panel.repaint();
+        int i = 0;
+        GridBagConstraints con = new GridBagConstraints();
+        try {
+            ResultSet rslt = getallentry.executeQuery();
+            while (rslt.next()) {
+                int bookingid = rslt.getInt("bookingid");
+                Date checkin = rslt.getDate("checkin");
+                Date checkout = rslt.getDate("checkout");
+                int roomid = rslt.getInt("roomid");
+                int guestid = rslt.getInt("guestid");
+                JButton btn = new MyButton(new Color(130, 180, 190),
+                        new Color(160, 160, 160),
+                        Color.blue,
+                        new EmptyBorder(5, 5, 5, 5),
+                        new MatteBorder(3, 3, 3, 3, Color.GRAY));
+                con.anchor = GridBagConstraints.CENTER;
+                con.fill = GridBagConstraints.HORIZONTAL;
+                con.gridx = 0;
+                con.gridy = i;
+                con.gridwidth = 1;
+                con.gridheight = 1;
+                con.weightx = 1;
+                con.weighty = 0;
+                panel.add(btn, con);
+                JPanel tile = new JPanel(new GridBagLayout());
+                btn.add(tile);
+                con.gridx = 0;
+                con.gridy = 0;
+                con.gridwidth = 1;
+                con.gridheight = 1;
+                con.weightx = 1;
+                con.weighty = 0;
+                JLabel lab1 = new JLabel("Booking Number : " + bookingid);
+                tile.add(lab1, con);
+
+                con.gridx = 1;
+                JLabel lab4 = new JLabel("Booked Room Number : " + roomid);
+                tile.add(lab4, con);
+
+                con.gridx = 2;
+                JLabel lab5 = new JLabel("Booked Guest Number : " + guestid);
+                tile.add(lab5, con);
+
+                con.gridy = 1;
+                con.gridx = 1;
+                JLabel lab2 = new JLabel("Checkin Date : " + checkin);
+                tile.add(lab2, con);
+
+                con.gridx = 2;
+                JLabel lab3 = new JLabel("Checkout Date : " + checkout);
+                tile.add(lab3, con);
+
+                Hotelmanager self = this;
+                btn.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent ex) {
+                        self.getinfo(bookingid, cp.panel.infopanel);
+                        cp.infopanelcurrent = bookingid;
+                    }
+                });
+
+                i++;
+            }
+            con.anchor = GridBagConstraints.CENTER;
+            con.fill = GridBagConstraints.VERTICAL;
+            con.gridx = 0;
+            con.gridy = i;
+            con.gridwidth = 1;
+            con.gridheight = 1;
+            con.weightx = 1;
+            con.weighty = 1;
+            panel.add(new JPanel(), con);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    ex,
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
     }
 }
 
