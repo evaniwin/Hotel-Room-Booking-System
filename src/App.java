@@ -1,13 +1,7 @@
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.*;
 import javax.swing.border.*;
-
-import com.mysql.cj.protocol.Resultset;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
@@ -39,324 +33,6 @@ enum ROOM_TYPE {
             default:
                 throw new IllegalArgumentException("Given Value must be between 1 and 3");
         }
-    }
-}
-
-class Room {
-    private final int roomNumber;
-    private ROOM_TYPE type;
-    private int pricePerNight;
-
-    public Room(int roomNumber, ROOM_TYPE type, int pricePerNight) {
-        if (pricePerNight < 0)
-            throw new IllegalArgumentException("Price cannot be negative");
-        this.roomNumber = roomNumber;
-        this.type = type;
-        this.pricePerNight = pricePerNight;
-    }
-
-    public int getRoomNumber() {
-        return roomNumber;
-    }
-
-    public ROOM_TYPE getType() {
-        return type;
-    }
-
-    public int getPricePerNight() {
-        return pricePerNight;
-    }
-
-    public void setType(ROOM_TYPE type) {
-        this.type = Objects.requireNonNull(type);
-    }
-
-    public void setPricePerNight(int pricePerNight) {
-        if (pricePerNight < 0)
-            throw new IllegalArgumentException("Price cannot be negative");
-        this.pricePerNight = pricePerNight;
-    }
-
-}
-
-class Guest {
-    private final int id;
-    private String name;
-    private String phone;
-    private String email;
-    private final ArrayList<Integer> bookingIds;
-
-    public Guest(int id, String name, String phone, String email) {
-        this.id = id;
-        this.name = name;
-        this.phone = phone;
-        this.email = email;
-        this.bookingIds = new ArrayList<Integer>();
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public ArrayList<Integer> getBookingIds() {
-        return bookingIds;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    void addBookingId(int bookingId) {
-        bookingIds.add(bookingId);
-    }
-
-    void removeBookingId(int bookingId) {
-        bookingIds.remove((Integer) bookingId);
-    }
-
-}
-
-class Booking {
-    private final int id;
-    private final int guestId;
-    private final int roomNumber;
-    private final LocalDate checkIn;
-    private final LocalDate checkOut;
-
-    public Booking(int id, int guestId, int roomNumber, LocalDate checkIn, LocalDate checkOut) {
-        if (!checkOut.isAfter(checkIn))
-            throw new IllegalArgumentException("checkOut must be after checkIn");
-        this.id = id;
-        this.guestId = guestId;
-        this.roomNumber = roomNumber;
-        this.checkIn = checkIn;
-        this.checkOut = checkOut;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public int getGuestId() {
-        return guestId;
-    }
-
-    public int getRoomNumber() {
-        return roomNumber;
-    }
-
-    public LocalDate getCheckIn() {
-        return checkIn;
-    }
-
-    public LocalDate getCheckOut() {
-        return checkOut;
-    }
-
-    public long nights() {
-        return ChronoUnit.DAYS.between(checkIn, checkOut);
-    }
-
-    public boolean overlaps(LocalDate start, LocalDate endExclusive) {
-        // Overlap if start < this.checkOut && end > this.checkIn
-        return start.isBefore(this.checkOut) && endExclusive.isAfter(this.checkIn);
-    }
-
-}
-
-class HotelManager {
-    private final Map<Integer, Room> rooms = new HashMap<>();
-    private final Map<Integer, Guest> guests = new HashMap<>();
-    private final Map<Integer, Booking> bookings = new HashMap<>();
-
-    private final AtomicInteger nextGuestId = new AtomicInteger(1);
-    private final AtomicInteger nextBookingId = new AtomicInteger(1);
-
-    // ---------------- Room Management ----------------
-    public void addRoom(Room room) {
-        if (rooms.containsKey(room.getRoomNumber()))
-            throw new IllegalArgumentException("Room already exists: " + room.getRoomNumber());
-        rooms.put(room.getRoomNumber(), room);
-    }
-
-    // Use CancelallroomBookings before calling
-    public Room removeRoom(int roomNumber) {
-        // Ensure no future bookings exist
-        LocalDate today = LocalDate.now();
-        for (Booking b : bookings.values()) {
-            if (b.getRoomNumber() == roomNumber && (b.getCheckOut().isAfter(today)))
-                throw new IllegalStateException("Cannot remove room with active/future bookings: " + roomNumber);
-        }
-        clearRoomBookingData(roomNumber);
-        // returns the removed room if found else return null
-        return rooms.remove(roomNumber);
-    }
-
-    private void clearRoomBookingData(int roomNumber) {
-        for (Booking b : bookings.values()) {
-            if (b.getRoomNumber() == roomNumber)
-                cancelBooking(b.getId());
-        }
-    }
-
-    public void CancelAllroomBookings(int roomNumber) {
-        LocalDate today = LocalDate.now();
-        for (Booking b : bookings.values()) {
-            if (b.getRoomNumber() == roomNumber && (b.getCheckOut().isAfter(today)))
-                cancelBooking(b.getId());
-        }
-    }
-
-    public void updateRoomPrice(int roomNumber, int newPrice) {
-        Room r = requireRoom(roomNumber);
-        r.setPricePerNight(newPrice);
-    }
-
-    public void updateRoomType(int roomNumber, ROOM_TYPE newType) {
-        Room r = requireRoom(roomNumber);
-        r.setType(newType);
-    }
-
-    public ArrayList<Room> listAvailableRoomsByType(ROOM_TYPE type, LocalDate start, LocalDate endExclusive) {
-        ArrayList<Room> result = new ArrayList<>();
-        for (Room r : rooms.values()) {
-            if (r.getType() == type && isRoomAvailable(r.getRoomNumber(), start, endExclusive)) {
-                result.add(r);
-            }
-        }
-        return result;
-    }
-
-    public boolean isRoomAvailable(int roomNumber, LocalDate start, LocalDate endExclusive) {
-        requireRoom(roomNumber);
-        for (Booking b : bookings.values()) {
-            if (b.getRoomNumber() == roomNumber && b.overlaps(start, endExclusive)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public boolean PrintRoomAvailable(LocalDate start, LocalDate endExclusive) {
-        System.out.println("Available Rooms For Selected Date");
-        System.out.println();
-        for (Room room : rooms.values()) {
-            for (Booking b : bookings.values()) {
-                if (b.getRoomNumber() == room.getRoomNumber() && !b.overlaps(start, endExclusive)) {
-                    System.out.println("");
-                    System.out.println("    " + b);
-                    System.out.println("        | Room Number: " + room.getRoomNumber());
-                    System.out.println("        | Room Type: " + room.getType());
-                    System.out.println("        | Price Per Night: " + room.getPricePerNight());
-                    System.out.println("");
-                }
-            }
-        }
-        return true;
-    }
-
-    // ---------------- Guest Management ----------------
-    public Guest registerGuest(String name, String phone, String email) {
-        int id = nextGuestId.getAndIncrement();
-        Guest g = new Guest(id, name, phone, email);
-        guests.put(id, g);
-        return g;
-    }
-
-    public Guest getGuest(int guestId) {
-        return requireGuest(guestId);
-    }
-
-    public Guest removeGuest(int guestid) {
-        // cancel all bookings
-        for (Booking b : bookings.values()) {
-            if (b.getGuestId() == guestid)
-                cancelBooking(b.getId());
-        }
-        return guests.remove(guestid);
-    }
-
-    // ---------------- Booking Operations ----------------
-    public Booking bookRoom(int guestId, int roomNumber, LocalDate checkIn, LocalDate checkOut) {
-        Guest g = requireGuest(guestId);
-        Room r = requireRoom(roomNumber);
-        if (!isRoomAvailable(roomNumber, checkIn, checkOut)) {
-            throw new IllegalStateException("Room " + roomNumber + " is not available for the selected dates");
-        }
-        int bookingId = nextBookingId.getAndIncrement();
-        Booking b = new Booking(bookingId, g.getId(), r.getRoomNumber(), checkIn, checkOut);
-        bookings.put(bookingId, b);
-        g.addBookingId(bookingId);
-        return b;
-    }
-
-    public void cancelBooking(int bookingId) {
-        Booking b = bookings.remove(bookingId);
-        if (b == null)
-            throw new NoSuchElementException("Booking not found: " + bookingId);
-        Guest g = guests.get(b.getGuestId());
-        if (g != null)
-            g.removeBookingId(bookingId);
-    }
-
-    public long calculateBill(int bookingId) {
-        Booking b = requireBooking(bookingId);
-        Room r = requireRoom(b.getRoomNumber());
-        return b.nights() * (long) r.getPricePerNight();
-    }
-
-    // ---------------- Helpers ----------------
-    Room requireRoom(int roomNumber) {
-        Room r = rooms.get(roomNumber);
-        if (r == null)
-            throw new NoSuchElementException("Room not found: " + roomNumber);
-        return r;
-    }
-
-    public Guest requireGuest(int guestId) {
-        Guest g = guests.get(guestId);
-        if (g == null)
-            throw new NoSuchElementException("Guest not found: " + guestId);
-        return g;
-    }
-
-    public Booking requireBooking(int bookingId) {
-        Booking b = bookings.get(bookingId);
-        if (b == null)
-            throw new NoSuchElementException("Booking not found: " + bookingId);
-        return b;
-    }
-
-    public Collection<Room> allRooms() {
-        return rooms.values();
-    }
-
-    public Collection<Guest> allGuests() {
-        return guests.values();
-    }
-
-    public Collection<Booking> allBookings() {
-        return bookings.values();
     }
 }
 
@@ -404,14 +80,14 @@ class MyButton extends JButton {
 
 class Contentpanel {
     Cardpanel panel;
-    Dataloader loader;
+    Hotelmanager loader;
     JButton createButton;
     JButton deleteButton;
     JButton editButton;
     JButton refreshButton;
     int infopanelcurrent;
 
-    Contentpanel(Cardpanel panel, Dataloader loader) {
+    Contentpanel(Cardpanel panel, Hotelmanager loader) {
         this.loader = loader;
         this.panel = panel;
         configuremainpanel();
@@ -709,7 +385,7 @@ class Cardpanel {
 
 }
 
-interface Dataloader {
+interface Hotelmanager {
     void insert();
 
     int remove(int item);
@@ -721,7 +397,7 @@ interface Dataloader {
     void renderall(JPanel panel, Contentpanel cp);
 }
 
-class Roompanel implements Dataloader {
+class Room implements Hotelmanager {
     JFrame frame;
     PreparedStatement insertentry;
     PreparedStatement getentry;
@@ -731,7 +407,7 @@ class Roompanel implements Dataloader {
     PreparedStatement getrelatedbookings;
     PreparedStatement findnearestid;
 
-    Roompanel(JFrame frame) {
+    Room(JFrame frame) {
         this.frame = frame;
         try {
             insertentry = Database.dbconn.prepareStatement("INSERT INTO room (room_type,price) VALUES (?,?);");
@@ -834,7 +510,7 @@ class Roompanel implements Dataloader {
         dialog.setVisible(true);
 
     }
-
+    //TODO remove bookings
     public int remove(int item) {
         try {
             getentry.setInt(1, item);
@@ -871,7 +547,6 @@ class Roompanel implements Dataloader {
     }
 
     public void edit(int item) {
-
         int roomtype;
         int price;
         try {
@@ -975,7 +650,7 @@ class Roompanel implements Dataloader {
         dialog.add(btn, con);
         dialog.setVisible(true);
     }
-
+    // TODO list Bookings
     public void getinfo(int item, JPanel panel) {
 
         int roomtype;
@@ -1002,11 +677,11 @@ class Roompanel implements Dataloader {
         JLabel lab1 = new JLabel("Room Number :");
         JLabel lab2 = new JLabel("Room Type :");
         JLabel lab3 = new JLabel("Price Per Night :");
-        JTextField fl1 = new JTextField(String.valueOf(item));
+        JTextField fl1 = new JTextField(String.valueOf(item),10);
         fl1.setEditable(false);
-        JTextField fl2 = new JTextField(ROOM_TYPE.strfromint(roomtype));
+        JTextField fl2 = new JTextField(ROOM_TYPE.strfromint(roomtype),10);
         fl2.setEditable(false);
-        JTextField fl3 = new JTextField(String.valueOf(price));
+        JTextField fl3 = new JTextField(String.valueOf(price),10);
         fl3.setEditable(false);
 
         panel.removeAll();
@@ -1046,7 +721,7 @@ class Roompanel implements Dataloader {
         panel.add(new JPanel(), con);
     }
 
-    // Todo
+
     public void renderall(JPanel panel, Contentpanel cp) {
         panel.removeAll();
         panel.revalidate();
@@ -1089,7 +764,7 @@ class Roompanel implements Dataloader {
                 con.gridx = 2;
                 JLabel lab3 = new JLabel("Price: " + price);
                 tile.add(lab3, con);
-                Dataloader self = this;
+                Hotelmanager self = this;
                 btn.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent ex) {
                         self.getinfo(roomid, cp.panel.infopanel);
@@ -1119,7 +794,7 @@ class Roompanel implements Dataloader {
     }
 }
 
-class Guestpanel implements Dataloader {
+class Guest implements Hotelmanager {
     JFrame frame;
     PreparedStatement insertentry;
     PreparedStatement getentry;
@@ -1129,7 +804,7 @@ class Guestpanel implements Dataloader {
     PreparedStatement getrelatedbookings;
     PreparedStatement findnearestid;
 
-    Guestpanel(JFrame frame) {
+    Guest(JFrame frame) {
         this.frame = frame;
         try {
             insertentry = Database.dbconn.prepareStatement("INSERT INTO guest (name,phone,email) VALUES (?,?,?);");
@@ -1227,7 +902,7 @@ class Guestpanel implements Dataloader {
         dialog.add(pan, con);
         dialog.setVisible(true);
     }
-
+    //TODO remove bookings
     public int remove(int item) {
         try {
             getentry.setInt(1, item);
@@ -1249,7 +924,7 @@ class Guestpanel implements Dataloader {
                 findnearestid.setInt(1, item);
                 ResultSet rs = findnearestid.executeQuery();
                 rs.next();
-                return rs.getInt("roomid");
+                return rs.getInt("guestid");
 
             }
             return item;
@@ -1338,7 +1013,7 @@ class Guestpanel implements Dataloader {
                     editentry.setString(2, tf2.getText());
                     editentry.setString(3, tf3.getText());
                     editentry.setInt(4, item);
-                    insertentry.execute();
+                    editentry.execute();
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(frame,
                             ex,
@@ -1362,7 +1037,7 @@ class Guestpanel implements Dataloader {
         dialog.add(pan, con);
         dialog.setVisible(true);
     }
-
+    //TODO show bookings
     public void getinfo(int item, JPanel panel) {
         String name;
         String phone;
@@ -1392,16 +1067,18 @@ class Guestpanel implements Dataloader {
         JLabel lab3 = new JLabel("Guest Phone Number :");
         JLabel lab4 = new JLabel("Guest Email :");
 
-        JTextField fl1 = new JTextField(String.valueOf(item));
+        JTextField fl1 = new JTextField(String.valueOf(item),15);
         fl1.setEditable(false);
-        JTextField fl2 = new JTextField(name);
+        JTextField fl2 = new JTextField(name,15);
         fl2.setEditable(false);
-        JTextField fl3 = new JTextField(phone);
+        JTextField fl3 = new JTextField(phone,15);
         fl3.setEditable(false);
-        JTextField fl4 = new JTextField(email);
+        JTextField fl4 = new JTextField(email,15);
         fl4.setEditable(false);
 
         panel.removeAll();
+        panel.revalidate();
+        panel.repaint();
 
         GridBagConstraints con = new GridBagConstraints();
         con.anchor = GridBagConstraints.CENTER;
@@ -1441,19 +1118,72 @@ class Guestpanel implements Dataloader {
     }
 
     public void renderall(JPanel panel, Contentpanel cp) {
-        int guestid;
-        String name;
-        String phone;
-        String email;
+        panel.removeAll();
+        panel.revalidate();
+        panel.repaint();
+        int i = 0;
+        GridBagConstraints con = new GridBagConstraints();
         try {
             ResultSet rslt = getallentry.executeQuery();
             while (rslt.next()) {
-                guestid = rslt.getInt("guestid");
-                name = rslt.getString("name");
-                phone = rslt.getString("phone");
-                email = rslt.getString("email");
+                int guestid = rslt.getInt("guestid");
+                String name = rslt.getString("name");
+                String phone = rslt.getString("phone");
+                String email = rslt.getString("email");
+                JButton btn = new MyButton(new Color(130, 180, 190),
+                        new Color(160, 160, 160),
+                        Color.blue,
+                        new EmptyBorder(5, 5, 5, 5),
+                        new MatteBorder(3, 3, 3, 3, Color.GRAY));
+                con.anchor = GridBagConstraints.CENTER;
+                con.fill = GridBagConstraints.HORIZONTAL;
+                con.gridx = 0;
+                con.gridy = i;
+                con.gridwidth = 1;
+                con.gridheight = 1;
+                con.weightx = 1;
+                con.weighty = 0;
+                panel.add(btn, con);
+                JPanel tile = new JPanel(new GridBagLayout());
+                btn.add(tile);
+                con.gridx = 0;
+                con.gridy = 0;
+                con.gridwidth = 1;
+                con.gridheight = 1;
+                con.weightx = 1;
+                con.weighty = 0;
+                JLabel lab1 = new JLabel("Guest Number : " + guestid);
+                tile.add(lab1, con);
+                con.gridx = 1;
+                JLabel lab2 = new JLabel("Guest Name : " + name);
+                tile.add(lab2, con);
+                con.gridx = 2;
+                JLabel lab3 = new JLabel("Guest Phone : " + phone);
+                tile.add(lab3, con);
+                con.gridx = 0;
+                con.gridy = 1;
+                JLabel lab4 = new JLabel("Guest email : " + email);
+                tile.add(lab4, con);
+                Hotelmanager self = this;
+                btn.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent ex) {
+                        self.getinfo(guestid, cp.panel.infopanel);
+                        cp.infopanelcurrent = guestid;
+                    }
+                });
 
+                i++;
             }
+            con.anchor = GridBagConstraints.CENTER;
+            con.fill = GridBagConstraints.VERTICAL;
+            con.gridx = 0;
+            con.gridy = i;
+            con.gridwidth = 1;
+            con.gridheight = 1;
+            con.weightx = 1;
+            con.weighty = 1;
+            panel.add(new JPanel(), con);
+
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(frame,
                     ex,
@@ -1464,7 +1194,7 @@ class Guestpanel implements Dataloader {
     }
 }
 
-class Bookingpanel implements Dataloader {
+class Booking implements Hotelmanager {
     JFrame frame;
     PreparedStatement insertentry;
     PreparedStatement getentry;
@@ -1476,7 +1206,7 @@ class Bookingpanel implements Dataloader {
     PreparedStatement get_room;
     PreparedStatement get_guest;
 
-    Bookingpanel(JFrame frame) {
+    Booking(JFrame frame) {
         this.frame = frame;
         try {
             insertentry = Database.dbconn
@@ -1670,13 +1400,13 @@ class AppUI {
         home = new Cardpanel(0, navlist);
         frame.add(home.main, "Home");
         roommgmt = new Cardpanel(1, navlist);
-        room = new Contentpanel(roommgmt, new Roompanel(frame));
+        room = new Contentpanel(roommgmt, new Room(frame));
         frame.add(roommgmt.main, "room");
         guestmgmt = new Cardpanel(2, navlist);
-        guest = new Contentpanel(guestmgmt, new Guestpanel(frame));
+        guest = new Contentpanel(guestmgmt, new Guest(frame));
         frame.add(guestmgmt.main, "guest");
         bookingmgmt = new Cardpanel(3, navlist);
-        booking = new Contentpanel(bookingmgmt, new Bookingpanel(frame));
+        booking = new Contentpanel(bookingmgmt, new Booking(frame));
         frame.add(bookingmgmt.main, "booking");
 
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
