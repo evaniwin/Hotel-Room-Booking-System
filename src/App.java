@@ -95,8 +95,7 @@ class Contentpanel {
         configuremainpanel();
         configureinfopanel();
         loader.renderall(panel.innerTiles, this);
-        loader.getinfo(1, panel.infopanel);
-        infopanelcurrent = 1;
+        infopanelcurrent = loader.getinfo(1, panel.infopanel);
     }
 
     private void configuremainpanel() {
@@ -125,7 +124,7 @@ class Contentpanel {
             public void actionPerformed(ActionEvent e) {
                 loader.insert();
                 loader.renderall(panel.innerTiles, self);
-                loader.getinfo(infopanelcurrent, panel.infopanel);
+                infopanelcurrent = loader.getinfo(infopanelcurrent, panel.infopanel);
             }
         });
         additionbuttons.add(createButton, BorderLayout.EAST);
@@ -140,7 +139,7 @@ class Contentpanel {
         refreshButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                loader.getinfo(infopanelcurrent, panel.infopanel);
+                infopanelcurrent = loader.getinfo(infopanelcurrent, panel.infopanel);
                 loader.renderall(panel.innerTiles, self);
             }
         });
@@ -200,7 +199,7 @@ class Contentpanel {
             public void actionPerformed(ActionEvent e) {
                 loader.edit(infopanelcurrent);
                 loader.renderall(panel.innerTiles, self);
-                loader.getinfo(infopanelcurrent, panel.infopanel);
+                infopanelcurrent = loader.getinfo(infopanelcurrent, panel.infopanel);
             }
         });
         controlbuttons.add(editButton, BorderLayout.EAST);
@@ -220,7 +219,7 @@ class Contentpanel {
             public void actionPerformed(ActionEvent e) {
                 infopanelcurrent = loader.remove(infopanelcurrent);
                 loader.renderall(panel.innerTiles, self);
-                loader.getinfo(infopanelcurrent, panel.infopanel);
+                infopanelcurrent = loader.getinfo(infopanelcurrent, panel.infopanel);
             }
         });
         controlbuttons.add(deleteButton, BorderLayout.WEST);
@@ -394,7 +393,7 @@ interface Hotelmanager {
 
     void edit(int item);
 
-    void getinfo(int item, JPanel panel);
+    int getinfo(int item, JPanel panel);
 
     void renderall(JPanel panel, Contentpanel cp);
 }
@@ -407,6 +406,7 @@ class Room implements Hotelmanager {
     PreparedStatement delete_entry;
     PreparedStatement getallentry;
     PreparedStatement delrelatedbookings;
+    PreparedStatement getrelatedbookings;
     PreparedStatement findnearestid;
 
     Room(JFrame frame) {
@@ -419,6 +419,8 @@ class Room implements Hotelmanager {
             getallentry = Database.dbconn.prepareStatement("SELECT * FROM room;");
             delrelatedbookings = Database.dbconn.prepareStatement(
                     "DELETE FROM booking where roomid = ?;");
+            getrelatedbookings = Database.dbconn.prepareStatement(
+                    "SELECT * FROM booking where roomid = ?;");
             findnearestid = Database.dbconn
                     .prepareStatement("SELECT * FROM room ORDER BY ABS(room.roomid - ?) LIMIT 1;");
         } catch (Exception ex) {
@@ -513,6 +515,9 @@ class Room implements Hotelmanager {
     }
 
     public int remove(int item) {
+        if (item == -1) {
+            return item;
+        }
         try {
             getentry.setInt(1, item);
             ResultSet rslt = getentry.executeQuery();
@@ -550,6 +555,9 @@ class Room implements Hotelmanager {
     }
 
     public void edit(int item) {
+        if (item == -1) {
+            return;
+        }
         int roomtype;
         int price;
         try {
@@ -653,20 +661,28 @@ class Room implements Hotelmanager {
         dialog.setVisible(true);
     }
 
-    // TODO list Bookings
-    public void getinfo(int item, JPanel panel) {
+    public int getinfo(int item, JPanel panel) {
 
         int roomtype;
         int price;
         try {
+            if (item == -1) {
+                findnearestid.setInt(1, item);
+                ResultSet rslt = findnearestid.executeQuery();
+                if (rslt.next()) {
+                    item = rslt.getInt("roomid");
+                } else {
+                    return -1;
+                }
+            }
             getentry.setInt(1, item);
             ResultSet rslt = getentry.executeQuery();
             if (!rslt.next()) {
-                JOptionPane.showMessageDialog(frame,
-                        "Room" + item + " does not exist",
-                        "Database Error",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
+                // JOptionPane.showMessageDialog(frame,
+                // "Room" + item + " does not exist",
+                // "Database Error",
+                // JOptionPane.ERROR_MESSAGE);
+                return -1;
             }
             roomtype = rslt.getInt("room_type");
             price = rslt.getInt("price");
@@ -675,7 +691,7 @@ class Room implements Hotelmanager {
                     ex,
                     "Database Error",
                     JOptionPane.ERROR_MESSAGE);
-            return;
+            return item;
         }
         JLabel lab1 = new JLabel("Room Number :");
         JLabel lab2 = new JLabel("Room Type :");
@@ -717,11 +733,13 @@ class Room implements Hotelmanager {
         panel.add(fl3, con);
 
         con.gridx = 0;
-        con.gridy = 3;
+        con.gridy = 4;
+
         con.fill = GridBagConstraints.BOTH;
         con.gridwidth = 2;
         con.weighty = 1000;
         panel.add(new JPanel(), con);
+        return item;
     }
 
     public void renderall(JPanel panel, Contentpanel cp) {
@@ -769,8 +787,7 @@ class Room implements Hotelmanager {
                 Hotelmanager self = this;
                 btn.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent ex) {
-                        self.getinfo(roomid, cp.panel.infopanel);
-                        cp.infopanelcurrent = roomid;
+                        cp.infopanelcurrent = self.getinfo(roomid, cp.panel.infopanel);
                     }
                 });
 
@@ -898,6 +915,9 @@ class Guest implements Hotelmanager {
     }
 
     public int remove(int item) {
+        if (item == -1) {
+            return item;
+        }
         try {
             getentry.setInt(1, item);
             ResultSet rslt = getentry.executeQuery();
@@ -934,6 +954,9 @@ class Guest implements Hotelmanager {
     }
 
     public void edit(int item) {
+        if (item == -1) {
+            return;
+        }
         String guestname;
         String guestphone;
         String guestemail;
@@ -1026,20 +1049,28 @@ class Guest implements Hotelmanager {
         dialog.setVisible(true);
     }
 
-    // TODO show bookings
-    public void getinfo(int item, JPanel panel) {
+    public int getinfo(int item, JPanel panel) {
         String name;
         String phone;
         String email;
         try {
+            if (item == -1) {
+                findnearestid.setInt(1, item);
+                ResultSet rslt = findnearestid.executeQuery();
+                if (rslt.next()) {
+                    item = rslt.getInt("guestid");
+                } else {
+                    return -1;
+                }
+            }
             getentry.setInt(1, item);
             ResultSet rslt = getentry.executeQuery();
             if (!rslt.next()) {
-                JOptionPane.showMessageDialog(frame,
-                        "Guest Number" + item + " does not exist",
-                        "Database Error",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
+                // JOptionPane.showMessageDialog(frame,
+                // "Guest Number" + item + " does not exist",
+                // "Database Error",
+                // JOptionPane.ERROR_MESSAGE);
+                return -1;
             }
             name = rslt.getString("name");
             phone = rslt.getString("phone");
@@ -1049,7 +1080,7 @@ class Guest implements Hotelmanager {
                     ex,
                     "Database Error",
                     JOptionPane.ERROR_MESSAGE);
-            return;
+            return item;
         }
         JLabel lab1 = new JLabel("Guest Number :");
         JLabel lab2 = new JLabel("Guest Name :");
@@ -1104,6 +1135,7 @@ class Guest implements Hotelmanager {
         con.gridwidth = 2;
         con.weighty = 1000;
         panel.add(new JPanel(), con);
+        return item;
     }
 
     public void renderall(JPanel panel, Contentpanel cp) {
@@ -1156,8 +1188,7 @@ class Guest implements Hotelmanager {
                 Hotelmanager self = this;
                 btn.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent ex) {
-                        self.getinfo(guestid, cp.panel.infopanel);
-                        cp.infopanelcurrent = guestid;
+                        cp.infopanelcurrent = self.getinfo(guestid, cp.panel.infopanel);
                     }
                 });
 
@@ -1254,6 +1285,7 @@ class Booking implements Hotelmanager {
         }
     }
 
+    // add bounds check to prevent double booking
     public void insert() {
         JDialog dialog = new JDialog(frame, "Create New Booking");
         dialog.setSize(500, 250);
@@ -1334,6 +1366,9 @@ class Booking implements Hotelmanager {
     }
 
     public int remove(int item) {
+        if (item == -1) {
+            return item;
+        }
         try {
             getentry.setInt(1, item);
             ResultSet rslt = getentry.executeQuery();
@@ -1368,6 +1403,9 @@ class Booking implements Hotelmanager {
     }
 
     public void edit(int item) {
+        if (item == -1) {
+            return;
+        }
         java.sql.Date checkin;
         java.sql.Date checkout;
         int roomid;
@@ -1385,7 +1423,7 @@ class Booking implements Hotelmanager {
             checkin = rslt.getDate("checkin");
             checkout = rslt.getDate("checkout");
             roomid = rslt.getInt("roomid");
-            guestid = rslt.getInt("guestid");            
+            guestid = rslt.getInt("guestid");
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(frame,
@@ -1476,21 +1514,30 @@ class Booking implements Hotelmanager {
         dialog.setVisible(true);
     }
 
-    public void getinfo(int item, JPanel panel) {
+    public int getinfo(int item, JPanel panel) {
         java.sql.Date checkin;
         java.sql.Date checkout;
         int roomid;
         int guestid;
         int bill;
         try {
+            if (item == -1) {
+                findnearestid.setInt(1, item);
+                ResultSet rslt = findnearestid.executeQuery();
+                if (rslt.next()) {
+                    item = rslt.getInt("bookingid");
+                } else {
+                    return -1;
+                }
+            }
             getentry.setInt(1, item);
             ResultSet rslt = getentry.executeQuery();
             if (!rslt.next()) {
-                JOptionPane.showMessageDialog(frame,
-                        "Booking Number" + item + " does not exist",
-                        "Database Error",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
+                // JOptionPane.showMessageDialog(frame,
+                // "Booking Number" + item + " does not exist",
+                // "Database Error",
+                // JOptionPane.ERROR_MESSAGE);
+                return -1;
             }
             checkin = rslt.getDate("checkin");
             checkout = rslt.getDate("checkout");
@@ -1503,14 +1550,13 @@ class Booking implements Hotelmanager {
             LocalDate localDate2 = checkout.toLocalDate();
             long daysBetween = ChronoUnit.DAYS.between(localDate1, localDate2);
             bill = (int) daysBetween * rslt.getInt("price");
-            
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(frame,
                     ex,
                     "Database Error",
                     JOptionPane.ERROR_MESSAGE);
-            return;
+            return item;
         }
         JLabel lab1 = new JLabel("Booking Number :");
         JLabel lab2 = new JLabel("Checkin Date :");
@@ -1528,9 +1574,9 @@ class Booking implements Hotelmanager {
         JTextField fl4 = new JTextField(String.valueOf(roomid), 15);
         fl4.setEditable(false);
         JTextField fl5 = new JTextField(String.valueOf(guestid), 15);
-        fl4.setEditable(false);
+        fl5.setEditable(false);
         JTextField fl6 = new JTextField(String.valueOf(bill), 15);
-        fl4.setEditable(false);
+        fl6.setEditable(false);
 
         panel.removeAll();
         panel.revalidate();
@@ -1579,6 +1625,7 @@ class Booking implements Hotelmanager {
         con.gridwidth = 2;
         con.weighty = 1000;
         panel.add(new JPanel(), con);
+        return item;
     }
 
     public void renderall(JPanel panel, Contentpanel cp) {
@@ -1640,8 +1687,7 @@ class Booking implements Hotelmanager {
                 Hotelmanager self = this;
                 btn.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent ex) {
-                        self.getinfo(bookingid, cp.panel.infopanel);
-                        cp.infopanelcurrent = bookingid;
+                        cp.infopanelcurrent = self.getinfo(bookingid, cp.panel.infopanel);
                     }
                 });
 
@@ -1713,6 +1759,7 @@ class AppUI {
         // Setub card menu and panels
         home = new Cardpanel(0, navlist);
         frame.add(home.main, "Home");
+        
         roommgmt = new Cardpanel(1, navlist);
         room = new Contentpanel(roommgmt, new Room(frame));
         frame.add(roommgmt.main, "room");
