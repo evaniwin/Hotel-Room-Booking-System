@@ -2,6 +2,7 @@
     Programming (OOP) principles in Java and limited use of SQL.
     The system should manage hotel operations such as room reservations, guest details, billing,
     and room availability tracking.
+    
         I. Class Design
             ● Room: Attributes like room number, room type (e.g., single/double/deluxe), price per
               night, and availability status.
