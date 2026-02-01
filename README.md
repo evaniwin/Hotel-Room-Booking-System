@@ -1,4 +1,8 @@
-4.  Design and implement the Hotel Room Booking System using Object-Oriented
+# Hotel Room Booking System
+
+This project is built with the following criteria
+```
+    Design and implement the Hotel Room Booking System using Object-Oriented
     Programming (OOP) principles in Java and limited use of SQL.
     The system should manage hotel operations such as room reservations, guest details, billing,
     and room availability tracking.
@@ -27,3 +31,4 @@
             ● Source Code: Java code with comments implementing the functionalities.
             ● User Manual: Setup instructions and step-by-step usage guide.
             ● Test Cases: Input/output examples to verify system features.
+```
